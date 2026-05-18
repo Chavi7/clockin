@@ -234,3 +234,4 @@ If you ran v1 already and want to keep that data:
 Module 2: **Ticket Management Agent**. The `employees` table now has clean ownership, which means tickets can be scoped per-teacher (you see only your students' tickets) just like the roster.
 
 — Ciri
+
