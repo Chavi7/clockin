@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}ROSTER{% endblock %}
+{% block body_class %}dashboard-body{% endblock %}
+
+{% block content %}
+<div class="ops-wrap">
+  {% with active='roster', section='ROSTER' %}{% include "_nav.html" %}{% endwith %}
+
+  {% if current_user.role == 'admin' %}
+    <div class="scope-bar">
+      <span class="scope-label">VIEW:</span>
+      <a href="{{ url_for('roster') }}"
+         class="chip {% if not view_all %}active{% endif %}">MY ROSTER</a>
+      <a href="{{ url_for('roster', scope='all') }}"
+         class="chip {% if view_all %}active{% endif %}">ALL TEACHERS</a>
+    </div>
+  {% endif %}
+
+  <section class="upload-card">
+    <h2>UPLOAD ROSTER (CSV)</h2>
+    <p class="muted">
+      Start by downloading a template. Fill it out in Excel, Google Sheets, or any text editor,
+      save as CSV, then upload here.
+    </p>
+
+    <div class="badge-actions">
+      <a href="{{ url_for('roster_template_blank') }}" class="btn btn-secondary">⬇ BLANK TEMPLATE</a>
+      <a href="{{ url_for('roster_template_example') }}" class="btn btn-secondary">⬇ EXAMPLE TEMPLATE</a>
+    </div>
+
+    <details class="csv-help">
+      <summary>What goes in each column?</summary>
+      <div class="csv-help-body">
+        <table class="csv-help-table">
+          <thead>
+            <tr><th>Column</th><th>Required?</th><th>What it is</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="mono"><strong>employee_id</strong></td>
+              <td>Optional</td>
+              <td><strong>Leave blank to auto-generate.</strong> The system will assign one based on the course (e.g. <code>ITF-001</code>, <code>CYB1-001</code>, <code>CE1-001</code>). Fill it in only if you want a specific ID.</td>
+            </tr>
+            <tr>
+              <td class="mono"><strong>first_name</strong></td>
+              <td>Required</td>
+              <td>Student's first name. Appears on the badge.</td>
+            </tr>
+            <tr>
+              <td class="mono"><strong>last_name</strong></td>
+              <td>Required</td>
+              <td>Student's last name. Appears on the badge.</td>
+            </tr>
+            <tr>
+              <td class="mono"><strong>school</strong></td>
+              <td>Required</td>
+              <td>School name. Appears on the badge header.</td>
+            </tr>
+            <tr>
+              <td class="mono">student_id</td>
+              <td>Optional</td>
+              <td>Your school's official student ID number (the one in your SIS).</td>
+            </tr>
+            <tr>
+              <td class="mono">role</td>
+              <td>Optional</td>
+              <td>Workplace role (Help Desk Manager, Desktop Technician, SOC Analyst, etc.). Appears on the badge.</td>
+            </tr>
+            <tr>
+              <td class="mono">course</td>
+              <td>Recommended</td>
+              <td>Which class. Used for the auto-generated Employee ID prefix. Recognized values: <code>IT Fundamentals</code>, <code>Cybersecurity 1</code>, <code>Cybersecurity 2</code>, <code>Computer Engineering 1</code>, <code>Computer Engineering 2</code> (various spellings work).</td>
+            </tr>
+            <tr>
+              <td class="mono">period</td>
+              <td>Optional</td>
+              <td>Class period (1, 2, 3, 4...). Used for filtering the dashboard.</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="muted">
+          <strong>Ownership:</strong> Students added through this upload become yours.
+          If a student is already owned by another teacher, they'll be skipped and you'll see a conflict warning.
+          {% if current_user.role == 'admin' %}As an admin, you can reassign ownership below.{% endif %}
+        </p>
+        <p class="muted">
+          <strong>Re-uploading:</strong> If an Employee ID already exists and belongs to you, that row is updated (not duplicated). Safe to re-upload an edited CSV.
+        </p>
+      </div>
+    </details>
+
+    <form method="POST" action="{{ url_for('upload_roster') }}" enctype="multipart/form-data" class="upload-form">
+      <input type="file" name="roster" accept=".csv" required>
+      <button type="submit" class="btn btn-primary">UPLOAD</button>
+    </form>
+  </section>
+
+  <section class="ops-table-wrap">
+    <table class="ops-table">
+      <thead>
+        <tr>
+          <th>STATUS</th>
+          <th>EMP ID</th>
+          <th>NAME</th>
+          <th>SCHOOL</th>
+          <th>ROLE</th>
+          <th>COURSE</th>
+          <th>PERIOD</th>
+          {% if view_all %}<th>OWNER</th>{% endif %}
+          <th>ACTIONS</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for emp in employees %}
+          <tr class="row {% if not emp.active %}row-inactive{% endif %}">
+            <td>
+              {% if emp.active %}
+                <span class="pill pill-in">ACTIVE</span>
+              {% else %}
+                <span class="pill pill-absent">INACTIVE</span>
+              {% endif %}
+            </td>
+            <td class="mono">{{ emp.employee_id }}</td>
+            <td class="strong">{{ emp.first_name }} {{ emp.last_name }}</td>
+            <td>{{ emp.school }}</td>
+            <td>{{ emp.role or '—' }}</td>
+            <td>{{ emp.course or '—' }}</td>
+            <td class="mono">{{ emp.period or '—' }}</td>
+            {% if view_all %}<td>{{ emp.owner_name or '—' }}</td>{% endif %}
+            <td class="actions-cell">
+              <form method="POST" action="{{ url_for('toggle_employee', eid=emp.id) }}" style="display:inline">
+                <button class="btn btn-mini">{{ 'DEACTIVATE' if emp.active else 'REACTIVATE' }}</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+        {% if not employees %}
+          <tr><td colspan="{% if view_all %}9{% else %}8{% endif %}" class="empty">
+            No employees on roster yet. Upload a CSV above.
+          </td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </section>
+</div>
+{% endblock %}

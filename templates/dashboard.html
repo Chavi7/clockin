@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}DASHBOARD{% endblock %}
+{% block body_class %}dashboard-body{% endblock %}
+
+{% block content %}
+<div class="ops-wrap">
+  {% with active='dashboard', section='OPS' %}{% include "_nav.html" %}{% endwith %}
+
+  {% if current_user.role == 'admin' %}
+    <div class="scope-bar">
+      <span class="scope-label">VIEW:</span>
+      <a href="{{ url_for('dashboard') }}"
+         class="chip {% if not view_all %}active{% endif %}">MY STUDENTS</a>
+      <a href="{{ url_for('dashboard', scope='all') }}"
+         class="chip {% if view_all %}active{% endif %}">ALL TEACHERS</a>
+    </div>
+  {% endif %}
+
+  <section class="ops-stats">
+    <div class="stat stat-total">
+      <span class="stat-label">EMPLOYEES TODAY</span>
+      <span class="stat-value">{{ stats.total }}</span>
+    </div>
+    <div class="stat stat-in">
+      <span class="stat-label">CLOCKED IN</span>
+      <span class="stat-value">{{ stats.clocked_in }}</span>
+    </div>
+    <div class="stat stat-out">
+      <span class="stat-label">CLOCKED OUT</span>
+      <span class="stat-value">{{ stats.clocked_out }}</span>
+    </div>
+    <div class="stat stat-absent">
+      <span class="stat-label">NOT IN YET</span>
+      <span class="stat-value">{{ stats.absent }}</span>
+    </div>
+    <div class="stat stat-date">
+      <span class="stat-label">DATE</span>
+      <span class="stat-value mono">{{ today }}</span>
+    </div>
+  </section>
+
+  <section class="ops-filters">
+    <span class="filter-label">PERIOD:</span>
+    <a href="{{ url_for('dashboard', scope='all' if view_all else none) }}"
+       class="chip {% if not active_period %}active{% endif %}">ALL</a>
+    {% for p in periods %}
+      <a href="{{ url_for('dashboard', period=p, scope='all' if view_all else none) }}"
+         class="chip {% if active_period == p %}active{% endif %}">P{{ p }}</a>
+    {% endfor %}
+    <span style="flex:1"></span>
+    <a href="{{ url_for('dashboard_export', scope='all' if view_all else none) }}"
+       class="btn btn-mini">⬇ EXPORT CSV</a>
+  </section>
+
+  <section class="ops-table-wrap">
+    <table class="ops-table">
+      <thead>
+        <tr>
+          <th>STATUS</th>
+          <th>EMP ID</th>
+          <th>NAME</th>
+          <th>ROLE</th>
+          <th>PERIOD</th>
+          {% if view_all %}<th>OWNER</th>{% endif %}
+          <th>CLOCK IN</th>
+          <th>CLOCK OUT</th>
+          <th>DURATION</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for emp in employees %}
+          <tr class="row row-{{ emp.status }}">
+            <td>
+              {% if emp.status == 'in' %}
+                <span class="pill pill-in">● ON SHIFT</span>
+              {% elif emp.status == 'out' %}
+                <span class="pill pill-out">✓ COMPLETE</span>
+              {% else %}
+                <span class="pill pill-absent">— NOT IN</span>
+              {% endif %}
+            </td>
+            <td class="mono">{{ emp.employee_id }}</td>
+            <td class="strong">{{ emp.name }}</td>
+            <td>{{ emp.role }}</td>
+            <td class="mono">{{ emp.period }}</td>
+            {% if view_all %}<td>{{ emp.owner_name }}</td>{% endif %}
+            <td class="mono">{{ emp.clock_in }}</td>
+            <td class="mono">{{ emp.clock_out }}</td>
+            <td class="mono">{{ emp.duration }}</td>
+          </tr>
+        {% endfor %}
+        {% if not employees %}
+          <tr><td colspan="{% if view_all %}9{% else %}8{% endif %}" class="empty">
+            No employees match this filter. Upload a roster to get started.
+          </td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </section>
+
+  <footer class="ops-footer">
+    <span>Auto-refreshes every 30 seconds.</span>
+    <span class="mono" id="lastRefresh"></span>
+  </footer>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const el = document.getElementById('lastRefresh');
+  if (el) el.textContent = 'LOADED ' + new Date().toLocaleTimeString();
+  setTimeout(() => location.reload(), 30000);
+</script>
+{% endblock %}

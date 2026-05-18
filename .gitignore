@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+
+# Database (NEVER commit — contains user accounts)
+data/*.db
+data/*.db-journal
+data/*.db-wal
+data/*.db-shm
+
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# OS junk
+.DS_Store
+Thumbs.db
+*~
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Build artifacts
+*.egg-info/
+build/
+dist/

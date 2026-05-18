@@ -1,0 +1,22 @@
+{# Reusable ops nav. Include with {% include "_nav.html" %} and set `active` var #}
+<header class="ops-header">
+  <div class="ops-brand">
+    <span class="brand-mark">●</span>
+    <span class="brand-name">THE OFFICE / {{ section|default("OPS") }}</span>
+  </div>
+  <nav class="ops-nav">
+    <a href="{{ url_for('dashboard') }}"
+       class="navlink {% if active == 'dashboard' %}active{% endif %}">TODAY</a>
+    <a href="{{ url_for('roster') }}"
+       class="navlink {% if active == 'roster' %}active{% endif %}">ROSTER</a>
+    <a href="{{ url_for('badges_form') }}"
+       class="navlink {% if active == 'badges' %}active{% endif %}">BADGES</a>
+    {% if current_user and current_user.role == 'admin' %}
+      <a href="{{ url_for('teachers_list') }}"
+         class="navlink {% if active == 'teachers' %}active{% endif %}">TEACHERS</a>
+    {% endif %}
+    <a href="{{ url_for('profile') }}"
+       class="navlink {% if active == 'profile' %}active{% endif %}">{{ current_user.full_name.split()[0] if current_user else 'PROFILE' }}</a>
+    <a href="{{ url_for('logout') }}" class="navlink danger">LOG OUT</a>
+  </nav>
+</header>

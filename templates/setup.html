@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}SETUP{% endblock %}
+{% block body_class %}login-body{% endblock %}
+
+{% block content %}
+<div class="login-wrap login-wrap-wide">
+  <div class="login-card">
+    <div class="login-stripe"></div>
+    <h1 class="login-title">FIRST-RUN SETUP</h1>
+    <p class="login-sub">
+      Create the first administrator account. This account can manage every roster
+      and create additional teacher accounts later.
+    </p>
+    <form method="POST" action="{{ url_for('setup') }}" class="login-form">
+      <label for="full_name">FULL NAME</label>
+      <input type="text" id="full_name" name="full_name"
+             value="{{ full_name or '' }}" required autofocus>
+
+      <label for="username">USERNAME <span class="muted">(this is what you'll sign in with)</span></label>
+      <input type="text" id="username" name="username"
+             value="{{ username or '' }}"
+             pattern="[A-Za-z0-9._\-]{3,32}"
+             title="3-32 characters: letters, digits, dots, underscores, hyphens"
+             placeholder="e.g. clocklear"
+             autocomplete="username" required>
+
+      <label for="email">EMAIL <span class="muted">(optional, used for future password reset)</span></label>
+      <input type="email" id="email" name="email"
+             value="{{ email or '' }}"
+             autocomplete="email">
+
+      <label for="courses">COURSES YOU TEACH <span class="muted">(optional, comma-separated)</span></label>
+      <input type="text" id="courses" name="courses"
+             value="{{ courses or '' }}"
+             placeholder="e.g. IT Fundamentals, Cybersecurity 1, Computer Engineering 1">
+
+      <label for="password">PASSWORD <span class="muted">(min 8 chars)</span></label>
+      <input type="password" id="password" name="password" minlength="8"
+             autocomplete="new-password" required>
+
+      <label for="confirm">CONFIRM PASSWORD</label>
+      <input type="password" id="confirm" name="confirm" minlength="8"
+             autocomplete="new-password" required>
+
+      <button type="submit" class="btn btn-primary">CREATE ADMIN ACCOUNT</button>
+    </form>
+    <p class="login-back muted" style="margin-top:1rem">
+      This page only appears once. After your account is created, you'll log in
+      normally with your username and password.
+    </p>
+  </div>
+</div>
+{% endblock %}

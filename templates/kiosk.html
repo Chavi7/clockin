@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}TIME CLOCK{% endblock %}
+{% block body_class %}kiosk-body{% endblock %}
+
+{% block content %}
+<div class="kiosk">
+  <header class="kiosk-header">
+    <div class="brand">
+      <span class="brand-mark">●</span>
+      <span class="brand-name">THE OFFICE</span>
+      <span class="brand-sub">EMPLOYEE TIME CLOCK</span>
+    </div>
+    <div class="clock-display">
+      <span id="liveClock" class="time-now">--:--</span>
+      <span id="liveDate" class="date-now">Loading…</span>
+    </div>
+  </header>
+
+  <main class="kiosk-stage">
+    <!-- IDLE STATE -->
+    <section id="idleStage" class="stage stage-idle">
+      <div class="instruction">
+        <h1 class="huge">SCAN YOUR BADGE</h1>
+        <p class="sub">Hold your badge up to the camera, or use a USB scanner.<br>
+           No badge? Type your Employee&nbsp;ID below.</p>
+      </div>
+
+      <div class="scanner-card">
+        <div class="scanner-tabs">
+          <button class="tab active" data-mode="scanner" id="tabScanner">USB SCANNER</button>
+          <button class="tab" data-mode="camera" id="tabCamera">CAMERA</button>
+          <button class="tab" data-mode="manual" id="tabManual">TYPE ID</button>
+        </div>
+
+        <!-- USB SCANNER MODE (default) -->
+        <div class="scanner-pane active" id="paneScanner">
+          <div class="scanner-target">
+            <div class="reticle"></div>
+            <p class="awaiting">Waiting for scan…</p>
+          </div>
+          <input type="text" id="scannerInput" class="hidden-input" autocomplete="off" autofocus>
+          <p class="hint">A USB QR/barcode scanner acts like a keyboard. Just scan — it auto-submits.</p>
+        </div>
+
+        <!-- CAMERA MODE -->
+        <div class="scanner-pane" id="paneCamera">
+          <div class="camera-frame">
+            <video id="cameraVideo" playsinline></video>
+            <canvas id="cameraCanvas" hidden></canvas>
+            <div class="reticle camera-reticle"></div>
+          </div>
+          <p class="hint" id="cameraHint">Position the QR code inside the frame.</p>
+        </div>
+
+        <!-- MANUAL MODE -->
+        <div class="scanner-pane" id="paneManual">
+          <form id="manualForm" class="manual-form">
+            <label for="manualInput">EMPLOYEE&nbsp;ID</label>
+            <input type="text" id="manualInput" name="manual" placeholder="E001"
+                   autocomplete="off" autocapitalize="characters">
+            <button type="submit" class="btn btn-primary">SUBMIT</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- RESULT STATE -->
+    <section id="resultStage" class="stage stage-result" hidden>
+      <div id="resultCard" class="result-card">
+        <div class="result-stripe"></div>
+        <div class="result-icon" id="resultIcon"></div>
+        <div class="result-action" id="resultAction"></div>
+        <div class="result-name" id="resultName"></div>
+        <div class="result-meta" id="resultMeta"></div>
+        <div class="result-time" id="resultTime"></div>
+        <div class="result-footer">
+          <p class="reset-hint">Returning to scan… <span id="resetCountdown">5</span></p>
+          <button id="resetNow" class="btn btn-ghost">SCAN NEXT</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="kiosk-footer">
+    <span class="footer-left">STATION 01 · OPERATIONAL</span>
+    <span class="footer-right"><a href="{{ url_for('login') }}">Teacher Login</a></span>
+  </footer>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/jsQR.js') }}"></script>
+<script src="{{ url_for('static', filename='js/kiosk.js') }}"></script>
+{% endblock %}

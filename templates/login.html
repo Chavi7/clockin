@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}TEACHER LOGIN{% endblock %}
+{% block body_class %}login-body{% endblock %}
+
+{% block content %}
+<div class="login-wrap">
+  <div class="login-card">
+    <div class="login-stripe"></div>
+    <h1 class="login-title">TEACHER LOGIN</h1>
+    <p class="login-sub">Sign in to view your roster and today's activity.</p>
+    <form method="POST" action="{{ url_for('login') }}" class="login-form">
+      <label for="username">USERNAME</label>
+      <input type="text" id="username" name="username"
+             value="{{ username or '' }}"
+             autocomplete="username"
+             autocapitalize="none"
+             autocorrect="off"
+             required autofocus>
+
+      <label for="password">PASSWORD</label>
+      <input type="password" id="password" name="password" required>
+
+      <button type="submit" class="btn btn-primary">SIGN IN</button>
+    </form>
+    <p class="login-back"><a href="{{ url_for('kiosk') }}">← Back to time clock</a></p>
+  </div>
+</div>
+{% endblock %}

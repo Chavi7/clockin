@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}PROFILE{% endblock %}
+{% block body_class %}dashboard-body{% endblock %}
+
+{% block content %}
+<div class="ops-wrap">
+  {% with active='profile', section='PROFILE' %}{% include "_nav.html" %}{% endwith %}
+
+  <section class="upload-card" style="max-width: 32rem">
+    <h2>YOUR ACCOUNT</h2>
+    <dl class="profile-grid">
+      <dt>NAME</dt>      <dd>{{ current_user.full_name }}</dd>
+      <dt>USERNAME</dt>  <dd class="mono">{{ current_user.username }}</dd>
+      <dt>EMAIL</dt>     <dd class="mono">{{ current_user.email or '—' }}</dd>
+      <dt>ROLE</dt>      <dd>{{ current_user.role|upper }}</dd>
+      <dt>COURSES</dt>   <dd>{{ current_user.courses or '—' }}</dd>
+      <dt>LAST LOGIN</dt><dd class="mono">{{ current_user.last_login_at or 'never' }}</dd>
+    </dl>
+  </section>
+
+  <section class="upload-card" style="max-width: 32rem">
+    <h2>EMAIL <span class="muted" style="font-size: 0.6em; letter-spacing: 0.15em">(OPTIONAL)</span></h2>
+    <p class="muted">
+      Optional. Saved for future password reset and notifications. We don't email anything yet.
+    </p>
+    <form method="POST" action="{{ url_for('profile') }}" class="profile-form">
+      <input type="hidden" name="action" value="update_email">
+      <label for="email">EMAIL ADDRESS</label>
+      <input type="email" id="email" name="email"
+             value="{{ current_user.email or '' }}"
+             placeholder="you@school.edu">
+      <button type="submit" class="btn btn-secondary">UPDATE EMAIL</button>
+    </form>
+  </section>
+
+  <section class="upload-card" style="max-width: 32rem">
+    <h2>COURSES YOU TEACH</h2>
+    <p class="muted">
+      Comma-separated list of courses you teach. Used by the system to suggest defaults
+      and route work in future modules. You can change this any time.
+    </p>
+    <form method="POST" action="{{ url_for('profile') }}" class="profile-form">
+      <input type="hidden" name="action" value="update_courses">
+      <label for="courses">COURSES</label>
+      <input type="text" id="courses" name="courses"
+             value="{{ current_user.courses or '' }}"
+             placeholder="e.g. IT Fundamentals, Cybersecurity 1">
+      <button type="submit" class="btn btn-secondary">UPDATE COURSES</button>
+    </form>
+  </section>
+
+  <section class="upload-card" style="max-width: 32rem">
+    <h2>CHANGE PASSWORD</h2>
+    {% if current_user.must_reset %}
+      <p class="muted" style="color: var(--red)">
+        <strong>You must change your password before continuing.</strong>
+        An admin issued you a temporary password — pick a new one now.
+      </p>
+    {% endif %}
+    <form method="POST" action="{{ url_for('profile') }}" class="profile-form">
+      <input type="hidden" name="action" value="change_password">
+      {% if not current_user.must_reset %}
+        <label for="current_password">CURRENT PASSWORD</label>
+        <input type="password" id="current_password" name="current_password" required>
+      {% endif %}
+
+      <label for="new_password">NEW PASSWORD <span class="muted">(min 8 chars)</span></label>
+      <input type="password" id="new_password" name="new_password" minlength="8" required>
+
+      <label for="confirm">CONFIRM NEW PASSWORD</label>
+      <input type="password" id="confirm" name="confirm" minlength="8" required>
+
+      <button type="submit" class="btn btn-primary">UPDATE PASSWORD</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

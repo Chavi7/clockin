@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}BADGES{% endblock %}
+{% block body_class %}dashboard-body{% endblock %}
+
+{% block content %}
+<div class="ops-wrap">
+  {% with active='badges', section='BADGES' %}{% include "_nav.html" %}{% endwith %}
+
+  <section class="upload-card">
+    <h2>PRINT EMPLOYEE BADGES</h2>
+    <p class="muted">8 badges per US-letter page, sized 3.5" × 2.25" to fit standard lanyard sleeves.
+       Each badge includes name, school, role, employee ID, and a QR code that the kiosk scans.</p>
+
+    <div class="badge-actions">
+      <a href="{{ url_for('badges_pdf') }}" class="btn btn-primary">PRINT ALL MY EMPLOYEES</a>
+      {% for p in periods %}
+        <a href="{{ url_for('badges_pdf', period=p) }}" class="btn btn-secondary">PRINT PERIOD {{ p }}</a>
+      {% endfor %}
+    </div>
+
+    {% if current_user.role == 'admin' %}
+      <div class="badge-actions" style="border-top: 1px solid var(--line); padding-top: 1rem; margin-top: 1rem">
+        <span class="muted" style="align-self:center; margin-right:0.5rem">ADMIN:</span>
+        <a href="{{ url_for('badges_pdf', scope='all') }}" class="btn btn-ghost">PRINT EVERY TEACHER'S BADGES</a>
+      </div>
+    {% endif %}
+
+    <p class="muted" style="margin-top: 1.5rem">Print on heavy paper (32 lb / 120 gsm or cardstock). Cut along the borders.
+       Laminate for durability or insert into a lanyard sleeve.</p>
+  </section>
+</div>
+{% endblock %}

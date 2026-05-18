@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}TEACHERS{% endblock %}
+{% block body_class %}dashboard-body{% endblock %}
+
+{% block content %}
+<div class="ops-wrap">
+  {% with active='teachers', section='TEACHERS' %}{% include "_nav.html" %}{% endwith %}
+
+  <section class="upload-card">
+    <div class="card-header-row">
+      <h2>TEACHER ACCOUNTS</h2>
+      <a href="{{ url_for('teacher_new') }}" class="btn btn-primary">+ ADD TEACHER</a>
+    </div>
+    <p class="muted">As an admin, you can create accounts, promote teachers to admins,
+       reset passwords, and deactivate access. Only admins can manage other teacher accounts.</p>
+  </section>
+
+  <section class="ops-table-wrap">
+    <table class="ops-table">
+      <thead>
+        <tr>
+          <th>STATUS</th>
+          <th>NAME</th>
+          <th>USERNAME</th>
+          <th>EMAIL</th>
+          <th>ROLE</th>
+          <th>COURSES</th>
+          <th>STUDENTS</th>
+          <th>LAST LOGIN</th>
+          <th>ACTIONS</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in teachers %}
+          <tr class="row {% if not t.active %}row-inactive{% endif %}">
+            <td>
+              {% if t.active %}
+                <span class="pill pill-in">ACTIVE</span>
+              {% else %}
+                <span class="pill pill-absent">INACTIVE</span>
+              {% endif %}
+            </td>
+            <td class="strong">
+              {{ t.full_name }}
+              {% if t.id == current_user.id %}<span class="muted">(you)</span>{% endif %}
+              {% if t.must_reset %}<span class="pill pill-warning">NEEDS PASSWORD RESET</span>{% endif %}
+            </td>
+            <td class="mono">{{ t.username }}</td>
+            <td class="mono muted">{{ t.email or '—' }}</td>
+            <td>
+              {% if t.role == 'admin' %}
+                <span class="pill pill-admin">ADMIN</span>
+              {% else %}
+                <span class="pill pill-teacher">TEACHER</span>
+              {% endif %}
+            </td>
+            <td class="muted">{{ t.courses or '—' }}</td>
+            <td class="mono">{{ t.employee_count }}</td>
+            <td class="mono muted">{{ t.last_login_at or 'never' }}</td>
+            <td class="actions-cell">
+              {% if t.id != current_user.id %}
+                <form method="POST" action="{{ url_for('teacher_role', tid=t.id) }}" style="display:inline">
+                  <input type="hidden" name="role" value="{{ 'teacher' if t.role == 'admin' else 'admin' }}">
+                  <button class="btn btn-mini">{{ 'DEMOTE' if t.role == 'admin' else 'PROMOTE' }}</button>
+                </form>
+                <form method="POST" action="{{ url_for('teacher_reset_password', tid=t.id) }}" style="display:inline">
+                  <button class="btn btn-mini" type="submit"
+                          onclick="return confirm('Generate a temporary password for {{ t.full_name }}? They will be forced to change it on next login.')">
+                    RESET PASSWORD
+                  </button>
+                </form>
+                <form method="POST" action="{{ url_for('teacher_toggle', tid=t.id) }}" style="display:inline">
+                  <button class="btn btn-mini">{{ 'DEACTIVATE' if t.active else 'REACTIVATE' }}</button>
+                </form>
+              {% else %}
+                <a href="{{ url_for('profile') }}" class="btn btn-mini">EDIT PROFILE</a>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+</div>
+{% endblock %}

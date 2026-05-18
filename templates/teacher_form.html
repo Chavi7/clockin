@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}NEW TEACHER{% endblock %}
+{% block body_class %}dashboard-body{% endblock %}
+
+{% block content %}
+<div class="ops-wrap">
+  {% with active='teachers', section='TEACHERS / NEW' %}{% include "_nav.html" %}{% endwith %}
+
+  <section class="upload-card" style="max-width: 36rem">
+    <h2>ADD A TEACHER</h2>
+    <p class="muted">
+      Create the account, then give the teacher their username and initial password in person.
+      They'll be required to change the password on their first login.
+    </p>
+    <form method="POST" action="{{ url_for('teacher_new') }}" class="profile-form">
+      <label for="full_name">FULL NAME</label>
+      <input type="text" id="full_name" name="full_name"
+             value="{{ full_name or '' }}" required autofocus>
+
+      <label for="username">USERNAME <span class="muted">(what they'll sign in with)</span></label>
+      <input type="text" id="username" name="username"
+             value="{{ username or '' }}"
+             pattern="[A-Za-z0-9._\-]{3,32}"
+             title="3-32 characters: letters, digits, dots, underscores, hyphens"
+             placeholder="e.g. msantos"
+             autocomplete="off" required>
+
+      <label for="email">EMAIL <span class="muted">(optional, for future password reset)</span></label>
+      <input type="email" id="email" name="email"
+             value="{{ email or '' }}">
+
+      <label for="courses">COURSES THEY TEACH <span class="muted">(optional, comma-separated)</span></label>
+      <input type="text" id="courses" name="courses"
+             value="{{ courses or '' }}"
+             placeholder="e.g. IT Fundamentals, Cybersecurity 1">
+
+      <label for="password">INITIAL PASSWORD <span class="muted">(min 8 chars)</span></label>
+      <input type="password" id="password" name="password" minlength="8" required>
+
+      <label for="role">ROLE</label>
+      <select id="role" name="role" class="role-select">
+        <option value="teacher" {% if role != 'admin' %}selected{% endif %}>Teacher — sees only own roster</option>
+        <option value="admin" {% if role == 'admin' %}selected{% endif %}>Admin — full access to all data</option>
+      </select>
+
+      <div class="form-row">
+        <button type="submit" class="btn btn-primary">CREATE ACCOUNT</button>
+        <a href="{{ url_for('teachers_list') }}" class="btn btn-ghost">CANCEL</a>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}
