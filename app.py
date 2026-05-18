@@ -26,8 +26,11 @@ from flask import (
 # CONFIG
 # ============================================================
 BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = BASE_DIR / "data"
-DATA_DIR.mkdir(exist_ok=True)
+# Where the SQLite DB lives. Defaults to ./data for local dev.
+# Override with CLOCKIN_DATA_DIR=/data when running in Docker (the compose file
+# mounts a named volume at /data so the DB persists across rebuilds).
+DATA_DIR = Path(os.environ.get("CLOCKIN_DATA_DIR", BASE_DIR / "data"))
+DATA_DIR.mkdir(parents=True, exist_ok=True)
 DB_PATH = DATA_DIR / "clockin.db"
 SCHEMA_PATH = BASE_DIR / "scripts" / "schema.sql"
 
@@ -718,7 +721,47 @@ def roster():
 
 
 # ------------------------------------------------------------
-# Course normalization. Used in two places:
+# Period normalization. The system only stores 'A.M.' or 'P.M.'
+# Anything else gets stored as the empty string (unassigned).
+#
+# Recognized inputs (case-insensitive):
+#   'am', 'a.m.', 'a.m', 'morning', '1' -> 'A.M.'
+#   'pm', 'p.m.', 'p.m', 'afternoon', '2' -> 'P.M.'
+# ------------------------------------------------------------
+PERIOD_VALUES = ("A.M.", "P.M.")
+
+_PERIOD_LOOKUP = {
+    "am": "A.M.",
+    "a.m.": "A.M.",
+    "a.m": "A.M.",
+    "a m": "A.M.",
+    "morning": "A.M.",
+    "1": "A.M.",
+    "1st": "A.M.",
+    "first": "A.M.",
+    "pm": "P.M.",
+    "p.m.": "P.M.",
+    "p.m": "P.M.",
+    "p m": "P.M.",
+    "afternoon": "P.M.",
+    "2": "P.M.",
+    "2nd": "P.M.",
+    "second": "P.M.",
+}
+
+
+def normalize_period(raw):
+    """
+    Given any reasonable variant a teacher or CSV might type, return
+    'A.M.', 'P.M.', or '' if we can't make sense of it.
+    """
+    if not raw:
+        return ""
+    key = " ".join(str(raw).strip().lower().split())
+    return _PERIOD_LOOKUP.get(key, "")
+
+
+
 #   1. Auto-generating Employee ID prefixes (existing).
 #   2. Recognizing what a teacher typed in their free-text courses field,
 #      so we can quietly match "Cyber 1" to "Cybersecurity 1".
@@ -883,6 +926,7 @@ def upload_roster():
     added, updated, conflicts = 0, 0, []
     generated_ids = []           # rows where we filled in the ID
     fallback_rows = []           # rows that used STU- fallback
+    bad_period_rows = []         # rows whose period couldn't be normalized
 
     # Track IDs we've already assigned in this upload so we don't double-pick.
     # next_employee_id() reads existing DB rows, but it doesn't see uncommitted
@@ -895,6 +939,13 @@ def upload_roster():
         # Skip totally blank rows
         if not any(norm.get(k) for k in ("employee_id", "first_name", "last_name")):
             continue
+
+        # Normalize period: only 'A.M.' or 'P.M.' are accepted; everything else is blank.
+        raw_period = norm.get("period", "")
+        period_value = normalize_period(raw_period)
+        if raw_period and not period_value:
+            bad_period_rows.append(f"{norm.get('first_name','')} {norm.get('last_name','')} (line {line_num}, value: {raw_period!r})")
+        norm["period"] = period_value
 
         # Name is required
         if not norm.get("first_name") or not norm.get("last_name"):
@@ -997,6 +1048,17 @@ def upload_roster():
             "warning",
         )
 
+    if bad_period_rows:
+        flash(
+            f"⚠ {len(bad_period_rows)} row(s) had an unrecognized period value — "
+            f"left blank. Use 'A.M.' or 'P.M.' in the period column.",
+            "warning",
+        )
+        for row_desc in bad_period_rows[:5]:
+            flash(f"⚠ {row_desc}", "warning")
+        if len(bad_period_rows) > 5:
+            flash(f"…and {len(bad_period_rows) - 5} more.", "warning")
+
     if conflicts:
         flash(f"Skipped {len(conflicts)} student(s) already owned by another teacher.", "warning")
         for c in conflicts[:10]:
@@ -1035,26 +1097,27 @@ def roster_template_example():
                "student_id", "role", "course", "period"]
     rows = [
         # Leave employee_id BLANK to auto-generate — these will become ITF-001, ITF-002, etc.
+        # The 'period' column is either 'A.M.' or 'P.M.' (these are the only accepted values).
         ["", "Alex", "Rivera", "Lincoln High", "128431",
-         "Help Desk Manager", "IT Fundamentals", "1"],
+         "Help Desk Manager", "IT Fundamentals", "A.M."],
         ["", "Sam", "Chen", "Lincoln High", "128765",
-         "Inventory Manager", "IT Fundamentals", "1"],
+         "Inventory Manager", "IT Fundamentals", "A.M."],
         ["", "Jordan", "Patel", "Lincoln High", "128902",
-         "6S Manager", "IT Fundamentals", "1"],
+         "6S Manager", "IT Fundamentals", "A.M."],
 
         # Cybersecurity 1 — will become CYB1-001, CYB1-002
         ["", "Bailey", "Walsh", "Lincoln High", "131005",
-         "Help Desk Manager", "Cybersecurity 1", "2"],
+         "Help Desk Manager", "Cybersecurity 1", "P.M."],
         ["", "Hayden", "Mercer", "Lincoln High", "131120",
-         "SOC Analyst", "Cybersecurity 1", "2"],
+         "SOC Analyst", "Cybersecurity 1", "P.M."],
 
         # Computer Engineering 1 — will become CE1-001
         ["", "Drew", "Larson", "Lincoln High", "132011",
-         "Field Tech Lead", "Computer Engineering 1", "3"],
+         "Field Tech Lead", "Computer Engineering 1", "A.M."],
 
         # Override the auto-generated ID with a custom one
         ["CUSTOM-007", "Indy", "Calloway", "Lincoln High", "133007",
-         "Senior Technician", "Computer Engineering 2", "4"],
+         "Senior Technician", "Computer Engineering 2", "P.M."],
     ]
 
     out = io.StringIO()

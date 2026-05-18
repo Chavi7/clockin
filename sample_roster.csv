@@ -1,24 +1,24 @@
 employee_id,first_name,last_name,school,student_id,role,course,period
-E001,Alex,Rivera,Lincoln High,128431,Help Desk Manager,IT Fundamentals,1
-E002,Sam,Chen,Lincoln High,128765,Inventory Manager,IT Fundamentals,1
-E003,Jordan,Patel,Lincoln High,128902,6S Manager,IT Fundamentals,1
-E004,Riley,Nguyen,Lincoln High,129114,Human Resource Manager,IT Fundamentals,1
-E005,Casey,Brooks,Lincoln High,129332,On-Site Manager,IT Fundamentals,1
-E006,Morgan,Diaz,Lincoln High,129501,Desktop Technician,IT Fundamentals,1
-E007,Avery,Kim,Lincoln High,129677,Desktop Technician,IT Fundamentals,1
-E008,Taylor,Singh,Lincoln High,129812,Desktop Technician,IT Fundamentals,1
-E009,Quinn,Murphy,Lincoln High,130055,Help Desk Technician,IT Fundamentals,1
-E010,Sky,Vasquez,Lincoln High,130198,Help Desk Technician,IT Fundamentals,1
-E011,Devon,Park,Lincoln High,130244,Junior Technician,IT Fundamentals,1
-E012,Reese,Henderson,Lincoln High,130412,Junior Technician,IT Fundamentals,1
-E101,Bailey,Walsh,Lincoln High,131005,Help Desk Manager,Cybersecurity 1,2
-E102,Hayden,Mercer,Lincoln High,131120,SOC Analyst,Cybersecurity 1,2
-E103,Cameron,Webb,Lincoln High,131233,Incident Responder,Cybersecurity 1,2
-E104,Emerson,Tate,Lincoln High,131388,Threat Hunter,Cybersecurity 1,2
-E105,Phoenix,Reyes,Lincoln High,131502,SOC Analyst,Cybersecurity 1,2
-E201,Drew,Larson,Lincoln High,132011,Field Tech Lead,Computer Engineering 1,3
-E202,Logan,Pierce,Lincoln High,132166,Hardware Technician,Computer Engineering 1,3
-E203,Parker,Ortega,Lincoln High,132310,Hardware Technician,Computer Engineering 1,3
-E301,Indy,Calloway,Lincoln High,133007,Senior Technician,Computer Engineering 2,4
-E302,Sage,Bellamy,Lincoln High,133122,Systems Engineer,Computer Engineering 2,4
-E303,River,Costa,Lincoln High,133290,Systems Engineer,Computer Engineering 2,4
+,Alex,Rivera,Lincoln High,128431,Help Desk Manager,IT Fundamentals,A.M.
+,Sam,Chen,Lincoln High,128765,Inventory Manager,IT Fundamentals,A.M.
+,Jordan,Patel,Lincoln High,128902,6S Manager,IT Fundamentals,A.M.
+,Riley,Nguyen,Lincoln High,129114,Human Resource Manager,IT Fundamentals,A.M.
+,Casey,Brooks,Lincoln High,129332,On-Site Manager,IT Fundamentals,A.M.
+,Morgan,Diaz,Lincoln High,129501,Desktop Technician,IT Fundamentals,A.M.
+,Avery,Kim,Lincoln High,129677,Desktop Technician,IT Fundamentals,A.M.
+,Taylor,Singh,Lincoln High,129812,Desktop Technician,IT Fundamentals,A.M.
+,Quinn,Murphy,Lincoln High,130055,Help Desk Technician,IT Fundamentals,A.M.
+,Sky,Vasquez,Lincoln High,130198,Help Desk Technician,IT Fundamentals,A.M.
+,Devon,Park,Lincoln High,130244,Junior Technician,IT Fundamentals,A.M.
+,Reese,Henderson,Lincoln High,130412,Junior Technician,IT Fundamentals,A.M.
+,Bailey,Walsh,Lincoln High,131005,Help Desk Manager,Cybersecurity 1,P.M.
+,Hayden,Mercer,Lincoln High,131120,SOC Analyst,Cybersecurity 1,P.M.
+,Cameron,Webb,Lincoln High,131233,Incident Responder,Cybersecurity 1,P.M.
+,Emerson,Tate,Lincoln High,131388,Threat Hunter,Cybersecurity 1,P.M.
+,Phoenix,Reyes,Lincoln High,131502,SOC Analyst,Cybersecurity 1,P.M.
+,Drew,Larson,Lincoln High,132011,Field Tech Lead,Computer Engineering 1,A.M.
+,Logan,Pierce,Lincoln High,132166,Hardware Technician,Computer Engineering 1,A.M.
+,Parker,Ortega,Lincoln High,132310,Hardware Technician,Computer Engineering 1,A.M.
+,Indy,Calloway,Lincoln High,133007,Senior Technician,Computer Engineering 2,P.M.
+,Sage,Bellamy,Lincoln High,133122,Systems Engineer,Computer Engineering 2,P.M.
+,River,Costa,Lincoln High,133290,Systems Engineer,Computer Engineering 2,P.M.

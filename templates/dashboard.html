@@ -45,7 +45,7 @@
        class="chip {% if not active_period %}active{% endif %}">ALL</a>
     {% for p in periods %}
       <a href="{{ url_for('dashboard', period=p, scope='all' if view_all else none) }}"
-         class="chip {% if active_period == p %}active{% endif %}">P{{ p }}</a>
+         class="chip {% if active_period == p %}active{% endif %}">{{ p }}</a>
     {% endfor %}
     <span style="flex:1"></span>
     <a href="{{ url_for('dashboard_export', scope='all' if view_all else none) }}"

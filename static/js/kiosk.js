@@ -193,7 +193,7 @@
       resultAction.textContent = 'CLOCKED IN';
       resultName.textContent = data.name;
       resultMeta.textContent = (data.role || '') +
-        (data.period ? ' · Period ' + data.period : '');
+        (data.period ? ' · ' + data.period : '');
       resultTime.textContent = data.time;
     } else if (data.action === 'clock_out') {
       resultCard.classList.add('is-clock-out');
@@ -201,7 +201,7 @@
       resultAction.textContent = 'CLOCKED OUT';
       resultName.textContent = data.name;
       resultMeta.textContent = (data.duration ? 'Shift: ' + data.duration : '') +
-        (data.period ? ' · Period ' + data.period : '');
+        (data.period ? ' · ' + data.period : '');
       resultTime.textContent = data.time;
     }
 
