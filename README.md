@@ -1,4 +1,4 @@
-# CLOCKIN — The Office Time Clock
+# CLOCKIN — Simulated Workplace
 
 A simulated-workplace QR-badge time clock for CTE classrooms.
 Built by **Ciri** for an AI-powered classroom operations ecosystem.
