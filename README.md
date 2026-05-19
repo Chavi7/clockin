@@ -10,8 +10,10 @@ Students scan a printed QR badge to clock in and out of class as if reporting to
 ## Table of contents
 
 - [What it does](#what-it-does)
+- [Install via Portainer (for teachers — easiest path)](#install-via-portainer-for-teachers--easiest-path)
+- [Install manually (without Portainer)](#install-manually-without-portainer)
 - [What's in the box](#whats-in-the-box)
-- [Quick start](#quick-start)
+- [Quick start (developer / source install)](#quick-start-developer--source-install)
 - [How the multi-teacher model works](#how-the-multi-teacher-model-works)
 - [First-run flow](#first-run-flow)
 - [Daily workflow](#daily-workflow)
@@ -22,7 +24,7 @@ Students scan a printed QR badge to clock in and out of class as if reporting to
 - [Password resets](#password-resets)
 - [Security notes](#security-notes)
 - [Backup](#backup)
-- [Running with Docker (Compose)](#running-with-docker-compose)
+- [Docker reference commands](#docker-reference-commands)
 - [What's intentionally NOT in this version](#whats-intentionally-not-in-this-version)
 - [What's next](#whats-next)
 
@@ -39,6 +41,93 @@ Students scan a printed QR badge to clock in and out of class as if reporting to
 - Export today's attendance to CSV for entry into your school's official attendance system.
 
 It does **not** replace your school's attendance system. It gives students ownership of their own clock-in routine and gives you a quick reference.
+
+---
+
+## Install via Portainer (for teachers — easiest path)
+
+If you have a school server, NAS, or home server with **Docker** and **Portainer** already running, you can have this app live in about 5 minutes. You don't need to write any code or install anything beyond Portainer.
+
+If you don't have Portainer yet, your school's IT department or a tech-savvy colleague can set it up — it's a free web interface for managing Docker containers. Skip to "Install manually (without Portainer)" below if you'd rather use the command line.
+
+### Step 1 — Open Portainer in your browser
+
+Usually at `http://your-server-ip:9443` or `http://your-server-ip:9000`. Sign in.
+
+### Step 2 — Create a new stack
+
+Click **Stacks** in the left sidebar → click **+ Add stack**.
+
+- **Name:** `clockin` (lowercase, no spaces — Portainer is strict about this)
+
+### Step 3 — Pick the Repository build method
+
+Under **Build method**, click **Repository**.
+
+Fill in:
+
+- **Authentication:** leave OFF (the repo is public)
+- **Repository URL:** `https://github.com/Chavi7/clockin`
+- **Repository reference:** `refs/heads/main`
+- **Compose path:** `compose.yml`
+
+Leave "Automatic updates" off for now.
+
+### Step 4 — Add the secret
+
+Scroll down to **Environment variables** → click **+ Add an environment variable**.
+
+- **name:** `CLOCKIN_SECRET`
+- **value:** any long random string
+
+To generate one, run this on the server:
+```bash
+python3 -c "import secrets; print(secrets.token_hex(32))"
+```
+
+Copy the 64-character output and paste it as the value.
+
+### Step 5 — Deploy
+
+Scroll to the bottom and click **Deploy the stack**.
+
+Portainer will clone the repo, build the Docker image (2-5 minutes the first time), and start the container.
+
+### Step 6 — Open the kiosk
+
+Once deployment finishes, open:
+```
+http://your-server-ip:5000/
+```
+
+You should see the **SCAN YOUR BADGE** kiosk page.
+
+Then go to `http://your-server-ip:5000/login` — you'll be redirected to `/setup` because the database is fresh. Create your admin account and you're live.
+
+### Updating later
+
+When changes are made to the code on GitHub, come back to Portainer:
+
+**Stacks → clockin → Pull and redeploy → confirm**
+
+That's it. The container rebuilds with the latest code, and your database survives because it's stored in a Docker volume.
+
+---
+
+## Install manually (without Portainer)
+
+If you'd rather use the command line and you have Docker installed:
+
+```bash
+git clone https://github.com/Chavi7/clockin.git
+cd clockin
+echo "CLOCKIN_SECRET=$(python3 -c 'import secrets; print(secrets.token_hex(32))')" > .env
+docker compose up -d --build
+```
+
+Then open `http://localhost:5000/`.
+
+To stop: `docker compose down`. To update later: `git pull && docker compose up -d --build`.
 
 ---
 
@@ -81,7 +170,9 @@ clockin/
 
 ---
 
-## Quick start
+## Quick start (developer / source install)
+
+This path is for poking at the code or making changes. If you just want to install and use the app, see **Install via Portainer** above.
 
 ### Requirements
 - Python 3.10 or newer
@@ -90,7 +181,7 @@ clockin/
 ### Install
 
 ```bash
-git clone https://github.com/<you>/clockin.git
+git clone https://github.com/Chavi7/clockin.git
 cd clockin
 python3 -m venv .venv
 source .venv/bin/activate            # Windows: .venv\Scripts\Activate.ps1
@@ -341,15 +432,12 @@ docker run --rm -v clockin-data:/data -v "$PWD":/backup alpine \
 
 ---
 
-## Running with Docker (Compose)
+## Docker reference commands
 
-The project ships with a `Dockerfile`, `compose.yml`, and `.dockerignore`. Once you have Docker and Docker Compose installed:
+The project ships with a `Dockerfile`, `compose.yml`, and `.dockerignore`. The Portainer install above is the easiest way for most people, but if you're running Docker directly from a terminal, these are the commands worth knowing:
 
 ```bash
-# One time only — set the secret
-echo "CLOCKIN_SECRET=$(python3 -c 'import secrets; print(secrets.token_hex(32))')" > .env
-
-# Build the image and start the container
+# Build and start
 docker compose up -d --build
 
 # Watch the logs
@@ -360,6 +448,9 @@ docker compose down
 
 # Stop AND wipe the database (irreversible)
 docker compose down -v
+
+# Pull latest code and rebuild
+git pull && docker compose up -d --build
 ```
 
 The container runs Gunicorn (production WSGI server) with 2 workers, exposes port 5000, restarts automatically on failure, and reports health to Docker every 30 seconds. The SQLite database lives in a Docker named volume called `clockin-data`, so rebuilding the image doesn't lose data.
