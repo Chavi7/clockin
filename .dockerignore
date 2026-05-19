@@ -1,0 +1,57 @@
+# Don't ship these into the image — they bloat the build context
+# and some (.env, *.db) would be a security/data risk.
+
+.git/
+.gitignore
+.gitattributes
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+build/
+dist/
+
+# Local database — the container creates its own in the mounted volume
+data/*.db
+data/*.db-journal
+data/*.db-wal
+data/*.db-shm
+
+# Secrets — never bake into the image
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Docs (not needed at runtime)
+README.md
+LICENSE
+
+# Docker files themselves
+Dockerfile
+.dockerignore
+compose.yml
+docker-compose.yml
+
+# OS junk
+.DS_Store
+Thumbs.db
+*~

@@ -22,6 +22,7 @@ Students scan a printed QR badge to clock in and out of class as if reporting to
 - [Password resets](#password-resets)
 - [Security notes](#security-notes)
 - [Backup](#backup)
+- [Running with Docker (Compose)](#running-with-docker-compose)
 - [What's intentionally NOT in this version](#whats-intentionally-not-in-this-version)
 - [What's next](#whats-next)
 
@@ -323,6 +324,53 @@ On Windows PowerShell:
 ```powershell
 Copy-Item data\clockin.db "data\clockin-backup-$(Get-Date -Format yyyyMMdd).db"
 ```
+
+If you're running in Docker, the database is in a named volume (`clockin-data`). Back it up like this:
+
+```bash
+docker run --rm -v clockin-data:/data -v "$PWD":/backup alpine \
+  tar czf /backup/clockin-backup-$(date +%Y%m%d).tar.gz -C /data .
+```
+
+To restore:
+
+```bash
+docker run --rm -v clockin-data:/data -v "$PWD":/backup alpine \
+  tar xzf /backup/clockin-backup-YYYYMMDD.tar.gz -C /data
+```
+
+---
+
+## Running with Docker (Compose)
+
+The project ships with a `Dockerfile`, `compose.yml`, and `.dockerignore`. Once you have Docker and Docker Compose installed:
+
+```bash
+# One time only — set the secret
+echo "CLOCKIN_SECRET=$(python3 -c 'import secrets; print(secrets.token_hex(32))')" > .env
+
+# Build the image and start the container
+docker compose up -d --build
+
+# Watch the logs
+docker compose logs -f
+
+# Stop (data preserved in the named volume)
+docker compose down
+
+# Stop AND wipe the database (irreversible)
+docker compose down -v
+```
+
+The container runs Gunicorn (production WSGI server) with 2 workers, exposes port 5000, restarts automatically on failure, and reports health to Docker every 30 seconds. The SQLite database lives in a Docker named volume called `clockin-data`, so rebuilding the image doesn't lose data.
+
+To change the host port (e.g. run on 8080 instead of 5000), edit `.env`:
+
+```
+CLOCKIN_PORT=8080
+```
+
+Then `docker compose up -d` to apply.
 
 ---
 

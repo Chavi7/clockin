@@ -1,0 +1,26 @@
+# CLOCKIN — Docker Compose configuration
+# Start:     docker compose up -d
+# Logs:      docker compose logs -f
+# Stop:      docker compose down
+# Stop+wipe: docker compose down -v   (also deletes the database volume!)
+# Rebuild:   docker compose up -d --build
+
+services:
+  clockin:
+    build: .
+    image: clockin:latest
+    container_name: clockin
+    restart: unless-stopped
+    ports:
+      # host:container — change the left number to remap (e.g. "8080:5000")
+      - "${CLOCKIN_PORT:-5000}:5000"
+    environment:
+      # CLOCKIN_SECRET is pulled from .env — never commit the real value.
+      - CLOCKIN_SECRET=${CLOCKIN_SECRET}
+    volumes:
+      # Persist the SQLite database outside the container so it survives rebuilds.
+      - clockin-data:/app/data
+
+volumes:
+  clockin-data:
+    name: clockin-data

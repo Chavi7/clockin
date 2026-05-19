@@ -1639,13 +1639,14 @@ def not_found(e):
 # BOOTSTRAP
 # ============================================================
 def ensure_initialized():
-    if not DB_PATH.exists():
-        init_db()
-    else:
-        # Run schema again to add any new tables/columns to existing DB
-        init_db()
+    """Create / migrate the schema. Safe to call repeatedly."""
+    init_db()
+
+
+# Initialize at import time so both `python app.py` AND
+# gunicorn workers (which import `app:app`) get a ready DB.
+ensure_initialized()
 
 
 if __name__ == "__main__":
-    ensure_initialized()
     app.run(host="0.0.0.0", port=5000, debug=False)
