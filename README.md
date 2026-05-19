@@ -1,11 +1,43 @@
-# CLOCKIN v2 — The Office Time Clock (Multi-Teacher)
+# CLOCKIN — The Office Time Clock
 
 A simulated-workplace QR-badge time clock for CTE classrooms.
-Built by **Ciri** for the AI-powered classroom operations ecosystem.
+Built by **Ciri** for an AI-powered classroom operations ecosystem.
 
-**What's new in v2:** Real teacher accounts. Each teacher signs in with their own
-email and password, sees only their own roster, and can print only their own badges.
-Admins can see everything, manage accounts, and resolve roster conflicts.
+Students scan a printed QR badge to clock in and out of class as if reporting to a workplace. Teachers see a live dashboard of who's "on shift" each period and can export attendance to CSV for entry into the school's official system.
+
+---
+
+## Table of contents
+
+- [What it does](#what-it-does)
+- [What's in the box](#whats-in-the-box)
+- [Quick start](#quick-start)
+- [How the multi-teacher model works](#how-the-multi-teacher-model-works)
+- [First-run flow](#first-run-flow)
+- [Daily workflow](#daily-workflow)
+- [Hardware options for the kiosk](#hardware-options-for-the-kiosk)
+- [Roster CSV format](#roster-csv-format)
+- [Editing a student](#editing-a-student)
+- [Deleting a student](#deleting-a-student)
+- [Password resets](#password-resets)
+- [Security notes](#security-notes)
+- [Backup](#backup)
+- [What's intentionally NOT in this version](#whats-intentionally-not-in-this-version)
+- [What's next](#whats-next)
+
+---
+
+## What it does
+
+- Students scan a QR badge (or type their Employee ID) on a classroom computer to clock in. A second scan later in the period clocks them out.
+- Each teacher signs in with a username and password to see their own roster, today's clock-ins/clock-outs, and shift durations.
+- Periods are **A.M.** or **P.M.** (block schedule). Filter the dashboard by either.
+- Generate a printable PDF of QR badges, 8 per US-letter page, sized for standard lanyard sleeves.
+- Edit a student's role, period, or course any time. Role changes are logged to a per-student timeline with the date, who changed it, and an optional note ("Promoted for excellent help desk performance").
+- Permanently delete a student with a type-to-confirm safety check, when they transfer out or you fix a data-entry mistake.
+- Export today's attendance to CSV for entry into your school's official attendance system.
+
+It does **not** replace your school's attendance system. It gives students ownership of their own clock-in routine and gives you a quick reference.
 
 ---
 
@@ -13,74 +45,58 @@ Admins can see everything, manage accounts, and resolve roster conflicts.
 
 ```
 clockin/
-├── app.py                    # Flask app with auth, roles, multi-teacher
-├── requirements.txt
-├── sample_roster.csv
+├── app.py                          # Flask app
+├── requirements.txt                # Python deps: Flask, qrcode, reportlab, bcrypt
+├── sample_roster.csv               # 23 example students across 4 courses
+├── README.md                       # this file
+├── LICENSE                         # MIT
+├── .env.example                    # template for environment variables
+├── .gitignore
 ├── scripts/
-│   └── schema.sql            # teachers + employees + shifts tables
+│   └── schema.sql                  # teachers + employees + shifts + role_history
 ├── templates/
 │   ├── base.html
-│   ├── _nav.html             # shared nav bar partial
-│   ├── kiosk.html            # public time clock
-│   ├── setup.html            # first-run admin account creation
+│   ├── _nav.html                   # shared nav bar partial
+│   ├── kiosk.html                  # public time clock (no login)
+│   ├── setup.html                  # first-run admin account creation
 │   ├── login.html
-│   ├── profile.html          # change own password
-│   ├── dashboard.html
-│   ├── roster.html
-│   ├── badges.html
-│   ├── teachers.html         # admin: list of teacher accounts
-│   ├── teacher_form.html     # admin: add new teacher
+│   ├── profile.html                # change own password, email, courses
+│   ├── dashboard.html              # today's clock-ins + period filter
+│   ├── roster.html                 # student list + CSV upload + edit/history/delete
+│   ├── employee_edit.html          # edit role / period / course
+│   ├── employee_history.html       # role-change timeline
+│   ├── employee_delete.html        # confirm-to-delete page
+│   ├── badges.html                 # print badge PDFs
+│   ├── teachers.html               # admin: list of teacher accounts
+│   ├── teacher_form.html           # admin: add new teacher
 │   └── error.html
 ├── static/
 │   ├── css/styles.css
 │   └── js/
-│       ├── jsQR.js
-│       └── kiosk.js
-└── data/                     # SQLite database lives here (auto-created)
+│       ├── jsQR.js                 # QR-decoding library (self-hosted, no CDN)
+│       └── kiosk.js                # scanner + camera + manual input controller
+└── data/                           # SQLite database lives here (auto-created)
 ```
 
 ---
 
-## How the multi-teacher model works
-
-**Login identifier: username, not email.** Each teacher picks a username (3-32 characters; letters, digits, dots, underscores, hyphens). Usernames are case-insensitive — `Chavis` and `chavis` are the same account. Email is optional and used only for future password reset features.
-
-
-
-**Roles:**
-- **Admin** — full access. Sees every teacher's roster and today's activity. Creates teacher accounts. Promotes/demotes. Resets passwords. Reassigns student ownership.
-- **Teacher** — sees only their own roster. Uploads their own CSV. Prints their own badges.
-
-**Student ownership:**
-- Every student belongs to exactly one teacher (the one who uploaded them).
-- If a second teacher uploads a CSV containing a student already owned by someone else, that student is **skipped** and a warning is shown. No silent overwrites.
-- Admins can reassign ownership manually from the Roster page in "ALL TEACHERS" view.
-
-**The kiosk is shared:**
-- One public time clock URL for the whole school. Any student from any teacher's roster can clock in from it. The dashboard for each teacher is filtered to their own students.
-
-**Account creation:**
-- Admin-only. There's no self-signup. You (the first admin) create accounts for other teachers and hand them an initial password in person.
-- Teachers are required to change the initial password on first login.
-
----
-
-## Setup
+## Quick start
 
 ### Requirements
-- Python 3.10+
-- Linux (Ubuntu/Debian), macOS, or Windows
+- Python 3.10 or newer
+- Linux / macOS / Windows
 
 ### Install
 
 ```bash
-# From inside the clockin folder
+git clone https://github.com/<you>/clockin.git
+cd clockin
 python3 -m venv .venv
-source .venv/bin/activate            # Windows: .venv\Scripts\activate
+source .venv/bin/activate            # Windows: .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
 
-### Configure (recommended before going live)
+### Configure
 
 Set a long random secret for session signing:
 
@@ -88,7 +104,13 @@ Set a long random secret for session signing:
 export CLOCKIN_SECRET="$(python3 -c 'import secrets; print(secrets.token_hex(32))')"
 ```
 
-On Linux, put this in `~/.bashrc` or in your systemd unit's `Environment=` lines.
+On Linux, put this in `~/.bashrc` or in your systemd unit's `Environment=` lines. On Windows PowerShell:
+
+```powershell
+$env:CLOCKIN_SECRET = -join ((48..57) + (65..90) + (97..122) | Get-Random -Count 64 | ForEach-Object {[char]$_})
+```
+
+A `.env.example` is included as a template — copy it to `.env` and fill it in if you'd rather use a file.
 
 ### Run
 
@@ -101,61 +123,99 @@ Output:
  * Running on http://0.0.0.0:5000
 ```
 
+From any classroom computer on the same network, open `http://your-server-ip:5000/`. The kiosk page is public — no login needed.
+
+---
+
+## How the multi-teacher model works
+
+**Login identifier: username, not email.** Each teacher picks a username (3-32 characters; letters, digits, dots, underscores, hyphens). Usernames are case-insensitive — `Chavis` and `chavis` are the same account. Email is optional and used only for future password reset features.
+
+**Roles:**
+- **Admin** — full access. Sees every teacher's roster and today's activity. Creates teacher accounts. Promotes/demotes other teachers. Resets passwords. Reassigns student ownership. Can delete any student.
+- **Teacher** — sees only their own roster. Uploads their own CSV. Prints their own badges. Edits, deactivates, or deletes their own students.
+
+**Student ownership:**
+- Every student belongs to exactly one teacher (the one who uploaded them).
+- If a second teacher uploads a CSV containing a student already owned by someone else, that row is **skipped** with a warning. No silent overwrites.
+- Admins can reassign ownership manually from the Roster page in "ALL TEACHERS" view.
+
+**The kiosk is shared:**
+- One public time clock URL for the whole school. Any student from any teacher's roster can clock in from it.
+- The dashboard each teacher sees is filtered to their own students. Admins can toggle "MY STUDENTS / ALL TEACHERS".
+
+**Account creation:**
+- Admin-only. No self-signup. You (the first admin) create accounts for other teachers and hand them an initial password in person.
+- Teachers are required to change the initial password on first login.
+
 ---
 
 ## First-run flow
 
-1. From a classroom computer, open `http://your-server-ip:5000/login`.
-2. The system detects there are no accounts yet and redirects you to **/setup**.
-3. Enter your full name, a username, an optional email, and a password (at least 8 characters). This becomes the first admin account.
-4. Log in normally with your username and password.
-5. Upload your roster CSV from the **ROSTER** page. The 23 students from `sample_roster.csv` become yours.
-6. Print badges from the **BADGES** page.
-7. To add another teacher: **TEACHERS → + ADD TEACHER**. Give them their email and initial password in person. They'll be forced to change it on first login.
+1. From any computer, open `http://your-server-ip:5000/login`.
+2. The system detects there are no accounts and redirects you to **/setup**.
+3. Enter your full name, a username, an optional email, your courses (also optional), and a password (at least 8 characters). This becomes the first admin account.
+4. Log in with your username and password.
+5. Click **ROSTER** and upload your CSV. Use the **BLANK TEMPLATE** or **EXAMPLE TEMPLATE** button to download a starter file.
+6. Click **BADGES** to print a PDF of QR badges for the students you just uploaded.
+7. To add another teacher: **TEACHERS → + ADD TEACHER**. Give them their username and initial password in person. They'll be forced to change it on first login.
 
 ---
-
-
-
-### Teacher courses
-
-When you create the first admin account (and when admins create new teachers), there's an optional **COURSES YOU TEACH** field. Type the courses informally — `Cyber 1, CompE 2, IT Fund` — and the system normalizes them behind the scenes to canonical names (`Cybersecurity 1, Computer Engineering 2, IT Fundamentals`).
-
-You can update your own courses any time from the **PROFILE** page. Admins can see every teacher's courses on the **TEACHERS** page.
-
-Recognized variants for each course:
-- **IT Fundamentals** — `IT Fund`, `ITF`, `Fundamentals`
-- **Cybersecurity 1** — `Cyber 1`, `Cyber I`, `CYB1`, `Cybersecurity I`
-- **Cybersecurity 2** — `Cyber 2`, `Cyber II`, `CYB2`
-- **Computer Engineering 1** — `Comp Eng 1`, `CompE 1`, `CE1`
-- **Computer Engineering 2** — `Comp Eng 2`, `CompE 2`, `CE2`
-
-Anything else gets stored as you typed it.
 
 ## Daily workflow
 
 ### For students (the kiosk)
 - The kiosk is always public at `http://your-server-ip:5000/`. No login.
-- Scan badge → green CLOCKED IN screen.
-- Scan again at end of period → blue CLOCKED OUT screen with shift duration.
+- Scan badge → green **CLOCKED IN** screen with name, role, and period.
+- Scan again at end of period → blue **CLOCKED OUT** screen with shift duration.
 
 ### For teachers
 - Sign in at `/login`.
-- The **TODAY** page shows your students who clocked in, who didn't, and shift times.
+- The **TODAY** page shows your students who clocked in, who clocked out, and who isn't here yet, organized by period.
+- Filter by **A.M.** or **P.M.** with the period chips.
 - Click **EXPORT CSV** to get a file for entering into your school's official attendance system.
 
-### For admins (you)
+### For admins
 - All of the above, plus:
 - On the dashboard and roster, toggle **VIEW: MY STUDENTS / ALL TEACHERS** to see other teachers' data.
 - Manage teacher accounts from the **TEACHERS** page (create, promote, reset password, deactivate).
 
 ---
 
+## Hardware options for the kiosk
+
+The kiosk supports three input modes:
+
+| Mode | Cost | Pros | Cons |
+|------|------|------|------|
+| **USB scanner** | $15–25 | Fastest. Auto-submits. Most "workplace" feel. | Need to buy one. |
+| **Webcam** | $0 (built-in) | Works on any classroom PC. | Slower; lighting matters; requires HTTPS for non-localhost. |
+| **Type ID** | $0 | Fallback when nothing else works. | Easy to fake; only as a backup. |
+
+Default is USB scanner. The kiosk auto-resets 5 seconds after each scan.
+
+**Note on webcam mode:** browsers only allow camera access on `http://localhost` or HTTPS. If you'll be accessing the kiosk from other classroom computers over the LAN, the USB scanner and Type ID modes work over plain HTTP, but the in-browser camera does not.
+
+---
+
 ## Roster CSV format
 
-**The fastest way:** go to the **ROSTER** page and click **EXAMPLE TEMPLATE**. You'll get a CSV with realistic sample rows and the columns already in the right order. Edit it in Excel or Google Sheets, save as CSV, upload.
+**The fastest way:** go to the **ROSTER** page and click **EXAMPLE TEMPLATE**. You'll get a CSV with realistic sample rows. Edit it in Excel or Google Sheets, save as CSV, upload.
 
-If you want to start from scratch, click **BLANK TEMPLATE** instead — just the headers, no data.
+If you want to start from scratch, click **BLANK TEMPLATE** instead — just the headers.
+
+### Columns
+
+| Column | Required? | What it is |
+|---|---|---|
+| `employee_id` | Optional | Leave blank to auto-generate. Fill in only if you want a specific ID. |
+| `first_name` | Required | Appears on the badge. |
+| `last_name` | Required | Appears on the badge. |
+| `school` | Required | Appears on the badge header. |
+| `student_id` | Optional | Your school's official student ID number. |
+| `role` | Optional | Workplace role (Help Desk Manager, Desktop Technician, SOC Analyst, etc.). Appears on the badge. |
+| `course` | Recommended | Which class. Used for the auto-generated Employee ID prefix. |
+| `period` | Optional | Must be `A.M.` or `P.M.`. Variants like `am`, `morning`, `afternoon`, `1`, `2` get normalized automatically. |
 
 ### Auto-generated Employee IDs
 
@@ -174,25 +234,53 @@ Numbering continues from the highest existing ID, so re-uploading new students l
 
 If you want a specific ID (e.g. matching a school-issued number), just type it in the `employee_id` column and it'll be used as-is.
 
-## Required columns:
-- `employee_id` — the QR identifier (E001, E002, ...)
-- `first_name`
-- `last_name`
-- `school`
+### Teacher courses
 
-Optional but recommended:
-- `student_id` — your school's official student ID
-- `role` — Help Desk Manager, Desktop Technician, etc.
-- `course`
-- `period`
+When you create the first admin account (and when admins create new teachers), there's an optional **COURSES YOU TEACH** field. Type the courses informally — `Cyber 1, CompE 2, IT Fund` — and the system normalizes them behind the scenes to canonical names (`Cybersecurity 1, Computer Engineering 2, IT Fundamentals`).
 
-**Conflict behavior:** if a CSV contains an `employee_id` already owned by another teacher, that row is skipped and you'll see a warning. You can ask the owning teacher to give them up, or (if you're an admin) reassign yourself.
+You can update your own courses any time from the **PROFILE** page.
+
+Recognized variants for each course:
+- **IT Fundamentals** — `IT Fund`, `ITF`, `Fundamentals`
+- **Cybersecurity 1** — `Cyber 1`, `Cyber I`, `CYB1`, `Cybersecurity I`
+- **Cybersecurity 2** — `Cyber 2`, `Cyber II`, `CYB2`
+- **Computer Engineering 1** — `Comp Eng 1`, `CompE 1`, `CE1`
+- **Computer Engineering 2** — `Comp Eng 2`, `CompE 2`, `CE2`
+
+Anything else gets stored as you typed it.
+
+---
+
+## Editing a student
+
+On the Roster page, click **EDIT** next to any student to open the edit form. You can change:
+
+- **Role** — free text with autocomplete suggestions for common workplace roles
+- **Period** — A.M. / P.M. / Unassigned
+- **Course** — pick from your 5 courses or keep an existing custom value
+- **Note** — optional reason for the change (only saved when the role changes)
+
+**Role changes are logged to a per-student history**, viewable by clicking **HISTORY** next to the row. Period and course changes are applied silently — they're routine administrative details that don't deserve a history record.
+
+The history page shows a timeline of every role change with the date, the teacher who made it, and the note. Useful for tracking "promotions" in the workplace simulation.
+
+---
+
+## Deleting a student
+
+Two ways to remove a student from your roster:
+
+**Deactivate** (the safe option) hides them from all views but keeps the database row, shift records, and role history. Use this for students who transfer out, students who shouldn't appear right now, or anyone you might need attendance records for later.
+
+**Permanently Delete** (the irreversible option) wipes the employee row, every shift they ever logged, and their entire role history. Use this for data-entry mistakes or rare cleanup. The confirmation page shows exactly what'll be deleted and requires you to type the student's Employee ID exactly to confirm.
+
+Owners (the teacher who uploaded the student) and admins can delete. Other teachers cannot touch students that aren't theirs.
 
 ---
 
 ## Password resets
 
-There's no email server (yet). When a teacher forgets their password:
+There's no email server yet. When a teacher forgets their password:
 
 1. As admin, go to **TEACHERS**.
 2. Click **RESET PASSWORD** next to their name.
@@ -204,36 +292,61 @@ Later, when we add email infrastructure, this will become a self-service "forgot
 
 ---
 
-## Security notes for this version
+## Security notes
 
 What's secure:
 - Passwords stored as bcrypt hashes (not plaintext, not reversible)
 - Session cookies signed with `CLOCKIN_SECRET` — can't be forged without the secret
-- Role-based access enforced on every protected route (not just the UI)
+- Role-based access enforced on every protected route (not just hidden in the UI)
+- Type-to-confirm safety check on permanent delete
 - One-admin-minimum guard prevents accidentally locking out all admins
 
-What's intentionally simple for v1:
-- No HTTPS by default. Fine for a firewalled classroom LAN, not okay if exposed to the public internet.
-- No CSRF tokens on POST forms. Acceptable for a single-LAN tool; if you ever expose this beyond your school's network, add Flask-WTF.
-- No rate limiting on login. A determined attacker on your LAN could brute-force a weak password. Use strong passwords.
-- Sessions live 12 hours. Adjust `PERMANENT_SESSION_LIFETIME` in `app.py` if you want shorter.
+What's intentionally simple:
+- No HTTPS by default. Fine for a firewalled classroom LAN. Add a reverse proxy (Caddy, nginx) with Let's Encrypt if you ever expose this to the public internet.
+- No CSRF tokens on POST forms. Acceptable for a single-LAN tool; add Flask-WTF if you expose beyond your school's network.
+- No rate limiting on login. Use strong passwords.
+- Sessions live 12 hours. Adjust `PERMANENT_SESSION_LIFETIME` in `app.py` to change.
 
 ---
 
-## Migration from v1
+## Backup
 
-If you ran v1 already and want to keep that data:
-- v1's database had no `teachers` table and no `owner_teacher_id` column.
-- The v2 schema is **additive only** — running `init_db()` on a v1 database will add the new tables but won't drop anything.
-- However, your existing employees won't have an owner and won't show on any dashboard. The safest path is what you chose: **wipe and start fresh** with v2. Delete `data/clockin.db` and run setup again.
+The database is a single file: `data/clockin.db`. To back up:
+
+```bash
+cp data/clockin.db data/clockin-backup-$(date +%Y%m%d).db
+```
+
+Set up a daily cron job to do this automatically. The file is small (under 1 MB even with a year of data) so it's cheap to keep many copies.
+
+On Windows PowerShell:
+```powershell
+Copy-Item data\clockin.db "data\clockin-backup-$(Get-Date -Format yyyyMMdd).db"
+```
 
 ---
 
-## When you're ready for what's next
+## What's intentionally NOT in this version
 
-Module 2: **Ticket Management Agent**. The `employees` table now has clean ownership, which means tickets can be scoped per-teacher (you see only your students' tickets) just like the roster.
+- No tickets, no inventory, no AI agents. Those are upcoming modules.
+- No buddy-punching prevention. If students scan each other's badges, the log will show it — but the system trusts the scan.
+- No mobile app. The web kiosk works on any browser, including phones.
+- No email notifications. Email is collected only for future password reset.
+
+These are deliberate cuts to keep the MVP small enough to validate in real classroom use before layering on more.
+
+---
+
+## What's next
+
+This is **Module 1** of a larger system. Upcoming modules will hang off the same database:
+
+- **Ticket Management Agent** — students submit and resolve troubleshooting tickets like real help desk technicians
+- **Inventory Manager AI** — asset tracking, check-out/check-in of hardware
+- **Lab Dispatch Agent** — assign individualized labs and work orders
+- **AI Tutor Agent** — Socratic guidance for certification prep
+- **Incident Response Agent** — generate cybersecurity scenarios for SOC simulation
+
+The `employees` table is the foreign key everything else will hang off of, so today's data carries forward without migration when those modules arrive.
 
 — Ciri
-
-
-Updated Mon May 18 01:48:40 PM EDT 2026
