@@ -925,3 +925,70 @@ code {
   border-left: 2px solid var(--line);
   padding-left: 0.5rem;
 }
+
+/* Danger zone styling for permanent delete */
+.danger-card {
+  border: 2px solid var(--red);
+  background: linear-gradient(180deg, #FFF5F5 0%, var(--paper) 80%);
+}
+.danger-banner {
+  background: var(--red);
+  color: var(--cream);
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 0.6rem;
+  margin: -1.5rem -1.5rem 1.25rem;
+  border-radius: 3px 3px 0 0;
+}
+.danger-subhead {
+  color: var(--red);
+  font-size: 0.95rem;
+  letter-spacing: 0.1em;
+  margin: 1rem 0 0.5rem;
+}
+.danger-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--ink);
+}
+.danger-list li {
+  padding: 0.2rem 0;
+}
+.danger-divider {
+  border: none;
+  border-top: 1px dashed var(--red);
+  margin: 1.5rem 0;
+}
+.confirm-target {
+  background: var(--navy);
+  color: var(--amber);
+  padding: 0.15rem 0.45rem;
+  border-radius: 3px;
+  margin-left: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+  letter-spacing: 0.05em;
+}
+.btn-danger {
+  background: var(--red);
+  color: var(--cream);
+  border-color: var(--red);
+}
+.btn-danger:hover {
+  background: #991B1B;
+  border-color: #991B1B;
+  text-decoration: none;
+}
+.btn-mini-danger {
+  background: #FFE4E4;
+  color: var(--red);
+  border-color: #FCA5A5;
+}
+.btn-mini-danger:hover {
+  background: var(--red);
+  color: var(--cream);
+  border-color: var(--red);
+  text-decoration: none;
+}

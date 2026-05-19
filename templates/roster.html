@@ -133,6 +133,7 @@
               <form method="POST" action="{{ url_for('toggle_employee', eid=emp.id) }}" style="display:inline">
                 <button class="btn btn-mini">{{ 'DEACTIVATE' if emp.active else 'REACTIVATE' }}</button>
               </form>
+              <a href="{{ url_for('delete_employee', eid=emp.id) }}" class="btn btn-mini btn-mini-danger">DELETE</a>
             </td>
           </tr>
         {% endfor %}

@@ -1245,6 +1245,67 @@ def employee_history(eid):
     return render_template("employee_history.html", emp=emp, history=history)
 
 
+@app.route("/roster/<int:eid>/delete", methods=["GET", "POST"])
+@login_required
+def delete_employee(eid):
+    """
+    Permanently delete an employee, their shifts, and their role history.
+    Two-step: GET shows confirmation page with counts; POST performs delete.
+    Owner of the employee OR any admin can do this.
+    """
+    user = current_user()
+    db = get_db()
+    emp = db.execute("SELECT * FROM employees WHERE id = ?", (eid,)).fetchone()
+    if not emp:
+        abort(404)
+    # Owner or admin only
+    if user["role"] != "admin" and emp["owner_teacher_id"] != user["id"]:
+        abort(403)
+
+    # Count what'll be wiped
+    shift_count = db.execute(
+        "SELECT COUNT(*) FROM shifts WHERE employee_id = ?",
+        (emp["employee_id"],),
+    ).fetchone()[0]
+    history_count = db.execute(
+        "SELECT COUNT(*) FROM role_history WHERE employee_id = ?",
+        (emp["employee_id"],),
+    ).fetchone()[0]
+
+    if request.method == "POST":
+        # Safety check: the form must include a confirmation token equal to the
+        # employee_id. This prevents accidental deletes from a stale form / CSRF.
+        typed_confirmation = request.form.get("confirm_id", "").strip().upper()
+        if typed_confirmation != emp["employee_id"]:
+            flash(
+                f"Confirmation didn't match. Type '{emp['employee_id']}' exactly to confirm.",
+                "error",
+            )
+            return render_template(
+                "employee_delete.html",
+                emp=emp, shift_count=shift_count, history_count=history_count,
+            )
+
+        # Order matters: delete dependent rows first to keep FK constraints happy
+        db.execute("DELETE FROM role_history WHERE employee_id = ?", (emp["employee_id"],))
+        db.execute("DELETE FROM shifts WHERE employee_id = ?", (emp["employee_id"],))
+        db.execute("DELETE FROM employees WHERE id = ?", (eid,))
+        db.commit()
+
+        flash(
+            f"Permanently deleted {emp['first_name']} {emp['last_name']} "
+            f"({emp['employee_id']}), {shift_count} shift(s), and {history_count} role-history entr"
+            f"{'ies' if history_count != 1 else 'y'}.",
+            "success",
+        )
+        return redirect(url_for("roster"))
+
+    return render_template(
+        "employee_delete.html",
+        emp=emp, shift_count=shift_count, history_count=history_count,
+    )
+
+
 # ============================================================
 # BADGES
 # ============================================================

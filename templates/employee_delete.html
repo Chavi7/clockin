@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}DELETE EMPLOYEE{% endblock %}
+{% block body_class %}dashboard-body{% endblock %}
+
+{% block content %}
+<div class="ops-wrap">
+  {% with active='roster', section='ROSTER / DELETE' %}{% include "_nav.html" %}{% endwith %}
+
+  <section class="upload-card danger-card" style="max-width: 36rem">
+    <div class="danger-banner">⚠ PERMANENT DELETE — THIS CANNOT BE UNDONE</div>
+
+    <h2>You're about to permanently delete:</h2>
+
+    <dl class="profile-grid" style="margin-bottom: 1rem">
+      <dt>NAME</dt>      <dd><strong>{{ emp.first_name }} {{ emp.last_name }}</strong></dd>
+      <dt>EMP ID</dt>    <dd class="mono">{{ emp.employee_id }}</dd>
+      <dt>SCHOOL</dt>    <dd>{{ emp.school }}</dd>
+      <dt>ROLE</dt>      <dd>{{ emp.role or '—' }}</dd>
+      <dt>COURSE</dt>    <dd>{{ emp.course or '—' }}</dd>
+      <dt>PERIOD</dt>    <dd>{{ emp.period or '—' }}</dd>
+    </dl>
+
+    <h3 class="danger-subhead">The following data will be wiped:</h3>
+    <ul class="danger-list">
+      <li>The employee record itself</li>
+      <li><strong>{{ shift_count }}</strong> shift{{ '' if shift_count == 1 else 's' }} (attendance history)</li>
+      <li><strong>{{ history_count }}</strong> role-history entr{{ 'y' if history_count == 1 else 'ies' }}</li>
+    </ul>
+
+    {% if shift_count > 0 %}
+      <p class="muted">
+        ⚠ <strong>{{ shift_count }} attendance record{{ '' if shift_count == 1 else 's' }} will be lost.</strong>
+        If you might need to prove this student was present on specific dates, export the dashboard
+        CSV first or use <strong>Deactivate</strong> instead (which keeps everything).
+      </p>
+    {% endif %}
+
+    <hr class="danger-divider">
+
+    <form method="POST" action="{{ url_for('delete_employee', eid=emp.id) }}" class="profile-form">
+      <label for="confirm_id">
+        TO CONFIRM, TYPE THIS EMPLOYEE ID EXACTLY:
+        <code class="confirm-target">{{ emp.employee_id }}</code>
+      </label>
+      <input type="text" id="confirm_id" name="confirm_id"
+             placeholder="Type {{ emp.employee_id }}"
+             autocomplete="off" autofocus required
+             class="mono">
+
+      <div class="form-row">
+        <button type="submit" class="btn btn-danger">PERMANENTLY DELETE</button>
+        <a href="{{ url_for('roster') }}" class="btn btn-ghost">CANCEL</a>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}
