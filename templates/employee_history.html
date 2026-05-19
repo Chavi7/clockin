@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{ emp.first_name }} {{ emp.last_name }} · HISTORY{% endblock %}
+{% block body_class %}dashboard-body{% endblock %}
+
+{% block content %}
+<div class="ops-wrap">
+  {% with active='roster', section='ROSTER / HISTORY' %}{% include "_nav.html" %}{% endwith %}
+
+  <section class="upload-card">
+    <div class="card-header-row">
+      <div>
+        <h2 style="margin: 0">{{ emp.first_name }} {{ emp.last_name }}</h2>
+        <p class="muted" style="margin: 0.25rem 0 0">
+          <span class="mono">{{ emp.employee_id }}</span>
+          · {{ emp.school }}
+          · Current role: <strong>{{ emp.role or '(none)' }}</strong>
+        </p>
+      </div>
+      <a href="{{ url_for('edit_employee', eid=emp.id) }}" class="btn btn-secondary">EDIT</a>
+    </div>
+  </section>
+
+  <section class="upload-card">
+    <h2>ROLE HISTORY</h2>
+    {% if not history %}
+      <p class="muted">No role changes recorded yet. Once you edit this employee's role, the change will appear here.</p>
+    {% else %}
+      <div class="timeline">
+        {% for h in history %}
+          <div class="timeline-entry">
+            <div class="timeline-marker"></div>
+            <div class="timeline-body">
+              <div class="timeline-headline">
+                <span class="strong">
+                  {{ h.old_role or '(none)' }}
+                  <span class="muted">→</span>
+                  {{ h.new_role or '(none)' }}
+                </span>
+              </div>
+              <div class="timeline-meta">
+                <span class="mono">{{ h.changed_at }}</span>
+                · by <strong>{{ h.changed_by_name or h.changed_by_username or 'unknown' }}</strong>
+              </div>
+              {% if h.note %}
+                <div class="timeline-note">"{{ h.note }}"</div>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </section>
+
+  <p style="margin-top: 1rem">
+    <a href="{{ url_for('roster') }}" class="btn btn-ghost">← Back to Roster</a>
+  </p>
+</div>
+{% endblock %}

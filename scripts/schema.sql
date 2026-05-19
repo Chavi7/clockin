@@ -54,3 +54,18 @@ CREATE TABLE IF NOT EXISTS shifts (
 
 CREATE INDEX IF NOT EXISTS idx_shifts_date     ON shifts(date);
 CREATE INDEX IF NOT EXISTS idx_shifts_employee ON shifts(employee_id);
+
+CREATE TABLE IF NOT EXISTS role_history (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    employee_id     TEXT    NOT NULL,
+    old_role        TEXT,                          -- previous role (may be empty)
+    new_role        TEXT,                          -- new role (may be empty if unset)
+    changed_by      INTEGER NOT NULL,              -- teacher who made the change
+    changed_at      TEXT    DEFAULT CURRENT_TIMESTAMP,
+    note            TEXT,                          -- optional reason / comment
+    FOREIGN KEY (employee_id) REFERENCES employees(employee_id),
+    FOREIGN KEY (changed_by)  REFERENCES teachers(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_role_history_employee ON role_history(employee_id);
+CREATE INDEX IF NOT EXISTS idx_role_history_at       ON role_history(changed_at);

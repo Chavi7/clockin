@@ -1165,6 +1165,86 @@ def reassign_employee(eid):
     return redirect(url_for("roster", scope="all"))
 
 
+@app.route("/roster/<int:eid>/edit", methods=["GET", "POST"])
+@login_required
+def edit_employee(eid):
+    """
+    Edit an employee's role, period, and course.
+    Role changes are logged to role_history; period and course are not.
+    """
+    user = current_user()
+    db = get_db()
+    emp = db.execute("SELECT * FROM employees WHERE id = ?", (eid,)).fetchone()
+    if not emp:
+        abort(404)
+    # Authorization: owner or admin
+    if user["role"] != "admin" and emp["owner_teacher_id"] != user["id"]:
+        abort(403)
+
+    if request.method == "POST":
+        new_role   = request.form.get("role", "").strip()
+        new_period = normalize_period(request.form.get("period", ""))
+        new_course_raw = request.form.get("course", "").strip()
+        # Normalize course through the same canonical map used elsewhere
+        new_course = normalize_course_name(new_course_raw) if new_course_raw else ""
+        note = request.form.get("note", "").strip() or None
+
+        old_role = emp["role"] or ""
+
+        # Apply the update
+        db.execute(
+            "UPDATE employees SET role = ?, period = ?, course = ? WHERE id = ?",
+            (new_role, new_period, new_course, eid),
+        )
+
+        # Log role changes ONLY (per design decision)
+        if new_role != old_role:
+            db.execute(
+                """INSERT INTO role_history
+                   (employee_id, old_role, new_role, changed_by, note)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (emp["employee_id"], old_role, new_role, user["id"], note),
+            )
+
+        db.commit()
+
+        if new_role != old_role:
+            flash(
+                f"{emp['first_name']} {emp['last_name']}: role changed from "
+                f"\"{old_role or '(none)'}\" to \"{new_role or '(none)'}\".",
+                "success",
+            )
+        else:
+            flash(f"{emp['first_name']} {emp['last_name']} updated.", "success")
+
+        return redirect(url_for("roster"))
+
+    return render_template("employee_edit.html", emp=emp)
+
+
+@app.route("/roster/<int:eid>/history")
+@login_required
+def employee_history(eid):
+    """View role-change history for a single employee."""
+    user = current_user()
+    db = get_db()
+    emp = db.execute("SELECT * FROM employees WHERE id = ?", (eid,)).fetchone()
+    if not emp:
+        abort(404)
+    if user["role"] != "admin" and emp["owner_teacher_id"] != user["id"]:
+        abort(403)
+
+    history = db.execute("""
+        SELECT h.*, t.full_name AS changed_by_name, t.username AS changed_by_username
+        FROM role_history h
+        LEFT JOIN teachers t ON t.id = h.changed_by
+        WHERE h.employee_id = ?
+        ORDER BY h.changed_at DESC
+    """, (emp["employee_id"],)).fetchall()
+
+    return render_template("employee_history.html", emp=emp, history=history)
+
+
 # ============================================================
 # BADGES
 # ============================================================

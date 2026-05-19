@@ -867,3 +867,61 @@ code {
   font-weight: 600;
 }
 .csv-help-table tbody tr:last-child td { border-bottom: none; }
+
+/* Timeline for role history */
+.timeline {
+  position: relative;
+  padding-left: 1.5rem;
+}
+.timeline::before {
+  content: "";
+  position: absolute;
+  left: 0.4rem;
+  top: 0.3rem;
+  bottom: 0.3rem;
+  width: 2px;
+  background: var(--line);
+}
+.timeline-entry {
+  position: relative;
+  padding-bottom: 1.25rem;
+}
+.timeline-entry:last-child { padding-bottom: 0; }
+.timeline-marker {
+  position: absolute;
+  left: -1.5rem;
+  top: 0.35rem;
+  width: 0.9rem;
+  height: 0.9rem;
+  background: var(--amber);
+  border: 2px solid var(--paper);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--line);
+}
+.timeline-entry:first-child .timeline-marker {
+  background: var(--green);
+}
+.timeline-body {
+  background: var(--cream-edge);
+  padding: 0.65rem 0.9rem;
+  border-radius: 4px;
+  border-left: 3px solid var(--amber);
+}
+.timeline-entry:first-child .timeline-body {
+  border-left-color: var(--green);
+}
+.timeline-headline {
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+.timeline-meta {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.timeline-note {
+  margin-top: 0.5rem;
+  font-style: italic;
+  color: var(--ink-soft);
+  border-left: 2px solid var(--line);
+  padding-left: 0.5rem;
+}

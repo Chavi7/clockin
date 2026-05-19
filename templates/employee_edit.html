@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}EDIT EMPLOYEE{% endblock %}
+{% block body_class %}dashboard-body{% endblock %}
+
+{% block content %}
+<div class="ops-wrap">
+  {% with active='roster', section='ROSTER / EDIT' %}{% include "_nav.html" %}{% endwith %}
+
+  <section class="upload-card" style="max-width: 36rem">
+    <h2>EDIT EMPLOYEE</h2>
+    <dl class="profile-grid" style="margin-bottom: 1rem">
+      <dt>NAME</dt>      <dd><strong>{{ emp.first_name }} {{ emp.last_name }}</strong></dd>
+      <dt>EMP ID</dt>    <dd class="mono">{{ emp.employee_id }}</dd>
+      <dt>SCHOOL</dt>    <dd>{{ emp.school }}</dd>
+    </dl>
+
+    <p class="muted">
+      Update role, period, and course below. <strong>Role changes are logged to the history</strong> —
+      period and course changes are not.
+    </p>
+
+    <form method="POST" action="{{ url_for('edit_employee', eid=emp.id) }}" class="profile-form">
+      <label for="role">ROLE</label>
+      <input type="text" id="role" name="role"
+             value="{{ emp.role or '' }}"
+             placeholder="e.g. Help Desk Manager, Desktop Technician, SOC Analyst"
+             list="role-suggestions"
+             autofocus>
+      <datalist id="role-suggestions">
+        <option value="Human Resource Manager">
+        <option value="6S Manager">
+        <option value="Inventory Manager">
+        <option value="Help Desk Manager">
+        <option value="On-Site Manager">
+        <option value="Desktop Technician">
+        <option value="Help Desk Technician">
+        <option value="Junior Technician">
+        <option value="Senior Technician">
+        <option value="Field Tech Lead">
+        <option value="Hardware Technician">
+        <option value="SOC Analyst">
+        <option value="Incident Responder">
+        <option value="Threat Hunter">
+        <option value="Systems Engineer">
+      </datalist>
+
+      <label for="period">PERIOD</label>
+      <select id="period" name="period" class="role-select">
+        <option value=""    {% if not emp.period %}selected{% endif %}>— Unassigned —</option>
+        <option value="A.M." {% if emp.period == 'A.M.' %}selected{% endif %}>A.M.</option>
+        <option value="P.M." {% if emp.period == 'P.M.' %}selected{% endif %}>P.M.</option>
+      </select>
+
+      <label for="course">COURSE</label>
+      <select id="course" name="course" class="role-select">
+        <option value="" {% if not emp.course %}selected{% endif %}>— Unassigned —</option>
+        <option value="IT Fundamentals"        {% if emp.course == 'IT Fundamentals' %}selected{% endif %}>IT Fundamentals</option>
+        <option value="Cybersecurity 1"        {% if emp.course == 'Cybersecurity 1' %}selected{% endif %}>Cybersecurity 1</option>
+        <option value="Cybersecurity 2"        {% if emp.course == 'Cybersecurity 2' %}selected{% endif %}>Cybersecurity 2</option>
+        <option value="Computer Engineering 1" {% if emp.course == 'Computer Engineering 1' %}selected{% endif %}>Computer Engineering 1</option>
+        <option value="Computer Engineering 2" {% if emp.course == 'Computer Engineering 2' %}selected{% endif %}>Computer Engineering 2</option>
+        {% if emp.course and emp.course not in ['IT Fundamentals', 'Cybersecurity 1', 'Cybersecurity 2', 'Computer Engineering 1', 'Computer Engineering 2'] %}
+          <option value="{{ emp.course }}" selected>{{ emp.course }} (custom)</option>
+        {% endif %}
+      </select>
+
+      <label for="note">NOTE <span class="muted">(optional — only for role changes)</span></label>
+      <input type="text" id="note" name="note"
+             placeholder="e.g. Promoted for excellent help desk performance">
+
+      <div class="form-row">
+        <button type="submit" class="btn btn-primary">SAVE CHANGES</button>
+        <a href="{{ url_for('roster') }}" class="btn btn-ghost">CANCEL</a>
+        <a href="{{ url_for('employee_history', eid=emp.id) }}" class="btn btn-ghost">VIEW HISTORY</a>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}
