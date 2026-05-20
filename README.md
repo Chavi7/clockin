@@ -42,7 +42,7 @@ Students scan a printed QR badge to clock in and out of class as if reporting to
 - Permanently delete a student with a type-to-confirm safety check, when they transfer out or you fix a data-entry mistake.
 - Export today's attendance to CSV for entry into your school's official attendance system.
 
-It does **not** replace your school's attendance system. It gives students ownership of their own clock-in routine and gives you a quick reference.
+It does **NOT** replace your school's attendance system. It gives students ownership of their own clock-in routine and gives you a quick reference.
 
 **The workplace simulation:** students at **CTEC** (the school) report to work at **Dragon Technologies** — a fictional company they "work for" during class. The kiosk and badges carry the Dragon Technologies logo, so badging in feels like reporting to a real employer. If you adopt this for your own classroom, the school name, company name, and logo are easy to swap — the names are plain text and the logo is one image file in `static/img/`.
 
