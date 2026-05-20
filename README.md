@@ -1,4 +1,4 @@
-# CLOCKIN — The Office Time Clock
+# CLOCKIN — CTEC Time Clock
 
 A simulated-workplace QR-badge time clock for CTE classrooms.
 Built by **Ciri** for an AI-powered classroom operations ecosystem.
@@ -43,6 +43,8 @@ Students scan a printed QR badge to clock in and out of class as if reporting to
 - Export today's attendance to CSV for entry into your school's official attendance system.
 
 It does **not** replace your school's attendance system. It gives students ownership of their own clock-in routine and gives you a quick reference.
+
+**The workplace simulation:** students at **CTEC** (the school) report to work at **Dragon Technologies** — a fictional company they "work for" during class. The kiosk and badges carry the Dragon Technologies logo, so badging in feels like reporting to a real employer. If you adopt this for your own classroom, the school name, company name, and logo are easy to swap — the names are plain text and the logo is one image file in `static/img/`.
 
 ---
 
@@ -137,11 +139,14 @@ To stop: `docker compose down`. To update later: `git pull && docker compose up 
 
 ```
 clockin/
-├── app.py                          # Flask app
-├── requirements.txt                # Python deps: Flask, qrcode, reportlab, bcrypt
+├── app.py                          # Flask app — all routes and logic
+├── requirements.txt                # Python deps: Flask, qrcode, reportlab, bcrypt, gunicorn
 ├── sample_roster.csv               # 23 example students across 4 courses
 ├── README.md                       # this file
 ├── LICENSE                         # MIT
+├── Dockerfile                      # builds the production container image
+├── compose.yml                     # Docker Compose service definition
+├── .dockerignore                   # files Docker excludes from the image
 ├── .env.example                    # template for environment variables
 ├── .gitignore
 ├── scripts/
@@ -164,9 +169,11 @@ clockin/
 │   └── error.html
 ├── static/
 │   ├── css/styles.css
+│   ├── img/                        # Dragon Technologies logo (kiosk, badges, login)
 │   └── js/
 │       ├── jsQR.js                 # QR-decoding library (self-hosted, no CDN)
 │       └── kiosk.js                # scanner + camera + manual input controller
+├── docs/                           # screenshots used in this README
 └── data/                           # SQLite database lives here (auto-created)
 ```
 
