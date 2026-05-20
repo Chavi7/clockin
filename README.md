@@ -305,7 +305,7 @@ Default is USB scanner. The kiosk auto-resets 5 seconds after each scan.
 
 **Note on webcam mode:** browsers only allow camera access on `http://localhost` or HTTPS. If you'll be accessing the kiosk from other classroom computers over the LAN, the USB scanner and Type ID modes work over plain HTTP, but the in-browser camera does not.
 
-The **BADGES** page generates a print-ready PDF — 8 badges per US-letter page, each with a QR code, the student's name, role, and Employee ID:
+The **BADGES** page generates a print-ready PDF — 8 badges per US-letter page in a 2×4 grid. Each badge is 3.5″ × 2.25″ (standard ID-card size, fits common lanyard sleeves) and carries a QR code, the student's name, role, and Employee ID:
 
 ![Printable QR badge sheet](docs/screenshot-badges.png)
 
@@ -324,7 +324,7 @@ If you want to start from scratch, click **BLANK TEMPLATE** instead — just the
 | `employee_id` | Optional | Leave blank to auto-generate. Fill in only if you want a specific ID. |
 | `first_name` | Required | Appears on the badge. |
 | `last_name` | Required | Appears on the badge. |
-| `school` | Required | Appears on the badge header. |
+| `school` | Required | The real school name. Appears on the badge header. (The Dragon Technologies company branding is built into the app — this field is the actual school.) |
 | `student_id` | Optional | Your school's official student ID number. |
 | `role` | Optional | Workplace role (Help Desk Manager, Desktop Technician, SOC Analyst, etc.). Appears on the badge. |
 | `course` | Recommended | Which class. Used for the auto-generated Employee ID prefix. |
@@ -428,7 +428,14 @@ What's intentionally simple:
 
 ## Backup
 
-The database is a single file: `data/clockin.db`. To back up:
+The database is a single SQLite file. **Which backup method you use depends on how you're running the app:**
+
+- **Running from source** (the `python app.py` path) → use the file-copy method below.
+- **Running in Docker** (Portainer or `docker compose`) → use the Docker-volume method below, because the database lives inside a named volume, not in the project folder.
+
+### If running from source
+
+The database is `data/clockin.db`. To back up:
 
 ```bash
 cp data/clockin.db data/clockin-backup-$(date +%Y%m%d).db
@@ -441,7 +448,9 @@ On Windows PowerShell:
 Copy-Item data\clockin.db "data\clockin-backup-$(Get-Date -Format yyyyMMdd).db"
 ```
 
-If you're running in Docker, the database is in a named volume (`clockin-data`). Back it up like this:
+### If running in Docker
+
+The database is in a named volume (`clockin-data`). Back it up like this:
 
 ```bash
 docker run --rm -v clockin-data:/data -v "$PWD":/backup alpine \
@@ -492,6 +501,7 @@ Then `docker compose up -d` to apply.
 
 ## What's intentionally NOT in this version
 
+- No HTTPS by default. The app runs over plain HTTP, which is fine for a firewalled classroom LAN. See **Security notes** for how to add HTTPS with a reverse proxy.
 - No tickets, no inventory, no AI agents. Those are upcoming modules.
 - No buddy-punching prevention. If students scan each other's badges, the log will show it — but the system trusts the scan.
 - No mobile app. The web kiosk works on any browser, including phones.
