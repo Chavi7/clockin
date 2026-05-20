@@ -1,8 +1,9 @@
 {# Reusable ops nav. Include with {% include "_nav.html" %} and set `active` var #}
 <header class="ops-header">
   <div class="ops-brand">
-    <span class="brand-mark">●</span>
-    <span class="brand-name">THE OFFICE / {{ section|default("OPS") }}</span>
+    <img src="{{ url_for('static', filename='img/dragonforge-icon-sm.png') }}"
+         alt="CTEC" class="brand-logo">
+    <span class="brand-name">CTEC / {{ section|default("OPS") }}</span>
   </div>
   <nav class="ops-nav">
     <a href="{{ url_for('dashboard') }}"

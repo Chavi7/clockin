@@ -6,7 +6,11 @@
 <div class="login-wrap">
   <div class="login-card">
     <div class="login-stripe"></div>
-    <h1 class="login-title">TEACHER LOGIN</h1>
+    <h1 class="login-title">
+      <img src="{{ url_for('static', filename='img/dragonforge-icon-sm.png') }}"
+           alt="CTEC" class="login-logo">
+      TEACHER LOGIN
+    </h1>
     <p class="login-sub">Sign in to view your roster and today's activity.</p>
     <form method="POST" action="{{ url_for('login') }}" class="login-form">
       <label for="username">USERNAME</label>

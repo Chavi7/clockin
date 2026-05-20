@@ -1397,30 +1397,54 @@ def generate_badges_pdf(employees):
 def draw_badge(c, x, y, w, h, emp, ImageReader):
     from reportlab.lib.units import inch
     from reportlab.lib.colors import HexColor
+    import os
 
-    navy = HexColor("#0F2540")
-    amber = HexColor("#F59E0B")
+    # Dragon-tech palette — matches the web UI
+    black = HexColor("#0A0F1A")
+    electric = HexColor("#4A9EFF")
     cream = HexColor("#FAF7F2")
     grey = HexColor("#6B7280")
 
+    # Body
     c.setFillColor(cream)
     c.rect(x, y, w, h, fill=1, stroke=0)
 
+    # Black header band
     header_h = 0.42 * inch
-    c.setFillColor(navy)
+    c.setFillColor(black)
     c.rect(x, y + h - header_h, w, header_h, fill=1, stroke=0)
 
-    c.setFillColor(amber)
+    # Electric-blue accent line under header
+    c.setFillColor(electric)
     c.rect(x, y + h - header_h - 0.04 * inch, w, 0.04 * inch, fill=1, stroke=0)
 
+    # Dragon logo in the top-LEFT corner of the header (small mark, brand stamp)
+    logo_path = os.path.join(os.path.dirname(__file__), "static", "img", "dragonforge-icon-sm.png")
+    if os.path.exists(logo_path):
+        logo_size = 0.32 * inch
+        c.drawImage(
+            logo_path,
+            x + 0.07 * inch,
+            y + h - header_h + (header_h - logo_size) / 2,
+            logo_size, logo_size,
+            mask="auto",
+            preserveAspectRatio=True,
+        )
+        # Push school name right to make room for the logo
+        text_x = x + 0.07 * inch + logo_size + 0.08 * inch
+    else:
+        text_x = x + 0.15 * inch
+
+    # School name + subtitle in header
     c.setFillColor(cream)
     c.setFont("Helvetica-Bold", 11)
-    school = (emp["school"] or "OFFICE").upper()
-    c.drawString(x + 0.15 * inch, y + h - header_h + 0.22 * inch, school)
+    school = (emp["school"] or "CTEC").upper()
+    c.drawString(text_x, y + h - header_h + 0.22 * inch, school)
     c.setFont("Helvetica", 7)
-    c.drawString(x + 0.15 * inch, y + h - header_h + 0.10 * inch, "SIMULATED WORKPLACE · EMPLOYEE ID")
+    c.drawString(text_x, y + h - header_h + 0.10 * inch, "CTEC · EMPLOYEE ID")
 
-    c.setStrokeColor(navy)
+    # Card border
+    c.setStrokeColor(black)
     c.setLineWidth(1.2)
     c.rect(x, y, w, h, fill=0, stroke=1)
 
@@ -1439,7 +1463,7 @@ def draw_badge(c, x, y, w, h, emp, ImageReader):
     tx = x + 0.15 * inch
     ty = y + h - header_h - 0.32 * inch
 
-    c.setFillColor(navy)
+    c.setFillColor(black)
     c.setFont("Helvetica-Bold", 13)
     c.drawString(tx, ty, emp["first_name"] or "")
     c.setFont("Helvetica-Bold", 13)
@@ -1448,7 +1472,7 @@ def draw_badge(c, x, y, w, h, emp, ImageReader):
     c.setFillColor(grey)
     c.setFont("Helvetica", 7)
     c.drawString(tx, ty - 0.40 * inch, "ROLE")
-    c.setFillColor(navy)
+    c.setFillColor(black)
     c.setFont("Helvetica-Bold", 8.5)
     role = (emp["role"] or "EMPLOYEE")[:24]
     c.drawString(tx, ty - 0.52 * inch, role.upper())
@@ -1456,14 +1480,14 @@ def draw_badge(c, x, y, w, h, emp, ImageReader):
     c.setFillColor(grey)
     c.setFont("Helvetica", 7)
     c.drawString(tx, ty - 0.70 * inch, "ID")
-    c.setFillColor(navy)
+    c.setFillColor(black)
     c.setFont("Courier-Bold", 11)
     c.drawString(tx, ty - 0.85 * inch, emp["employee_id"])
 
     c.setFillColor(grey)
     c.setFont("Helvetica-Oblique", 6)
     c.drawString(x + 0.15 * inch, y + 0.10 * inch,
-                 "Property of the office. If found, return to your supervisor.")
+                 "Property of CTEC. If found, return to your supervisor.")
 
 
 def make_qr_image(data):

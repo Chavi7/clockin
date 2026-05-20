@@ -1,14 +1,30 @@
 /* ============================================================
-   THE OFFICE · Time Clock Styles
-   Aesthetic: industrial workplace console — navy/amber/cream.
+   CTEC · Time Clock Styles
+   Aesthetic: dragon-tech ops console — near-black chrome with
+   electric-blue accents, cream content for readability.
    ============================================================ */
 
 :root {
-  --navy:        #0F2540;
-  --navy-deep:   #061325;
-  --navy-soft:   #1B3354;
-  --amber:       #F59E0B;
-  --amber-deep:  #B45309;
+  /* Dragon-tech palette (replaces the old navy/amber theme).
+     The legacy names (--navy, --amber) are kept as aliases so we
+     don't have to touch hundreds of CSS rules — they now point at
+     the new colors. */
+  --black:       #0A0F1A;          /* near-black, matches logo background */
+  --black-deep:  #050810;          /* even darker for shadows / footer */
+  --black-soft:  #131A28;          /* slightly lifted, for cards on black */
+  --electric:    #4A9EFF;          /* dragon accent blue */
+  --electric-deep: #1E6FE0;        /* hover / pressed state */
+  --electric-glow: rgba(74,158,255,0.35);
+
+  /* Legacy aliases — old code references these everywhere.
+     Pointing them at the new palette gets a free re-theme. */
+  --navy:        #0A0F1A;          /* was #0F2540 */
+  --navy-deep:   #050810;          /* was #061325 */
+  --navy-soft:   #131A28;          /* was #1B3354 */
+  --amber:       #4A9EFF;          /* was #F59E0B */
+  --amber-deep:  #1E6FE0;          /* was #B45309 */
+
+  /* Content area colors stay cream/ink for readability. */
   --cream:       #FAF7F2;
   --cream-edge:  #EFEADD;
   --paper:       #FFFFFF;
@@ -16,13 +32,16 @@
   --ink-soft:    #4A5260;
   --muted:       #6B7280;
   --line:        #D6CFC0;
+
+  /* Status colors — unchanged */
   --green:       #15803D;
   --green-soft:  #DCFCE7;
   --red:         #B91C1C;
   --red-soft:    #FEE2E2;
   --blue:        #1D4ED8;
   --blue-soft:   #DBEAFE;
-  --shadow:      0 1px 0 rgba(15,37,64,0.06), 0 8px 24px -12px rgba(15,37,64,0.18);
+
+  --shadow:      0 1px 0 rgba(10,15,26,0.08), 0 8px 24px -12px rgba(10,15,26,0.35);
 
   --font-sans:   ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
   --font-mono:   ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
@@ -91,9 +110,19 @@ a:hover { text-decoration: underline; }
 
 .brand { display: flex; align-items: center; gap: 0.75rem; }
 .brand-mark {
-  color: var(--amber);
+  color: var(--electric);
   font-size: 1.5rem;
   line-height: 1;
+}
+.brand-logo {
+  width: 2rem;
+  height: 2rem;
+  object-fit: contain;
+  filter: drop-shadow(0 0 6px var(--electric-glow));
+}
+.brand-logo-large {
+  width: 3rem;
+  height: 3rem;
 }
 .brand-name {
   font-weight: 900;
@@ -431,7 +460,8 @@ a:hover { text-decoration: underline; }
    LOGIN
    ============================================================ */
 .login-body {
-  background: var(--navy);
+  background:
+    radial-gradient(ellipse at center, var(--black-soft) 0%, var(--black) 60%, var(--black-deep) 100%);
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -439,24 +469,38 @@ a:hover { text-decoration: underline; }
   padding: 2rem;
 }
 .login-wrap { width: 100%; max-width: 24rem; }
+.login-wrap-wide { max-width: 30rem; }
 .login-card {
   background: var(--paper);
   border-radius: 6px;
   padding: 2rem;
-  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4);
+  box-shadow:
+    0 0 0 1px rgba(74,158,255,0.15),
+    0 25px 50px -12px rgba(0,0,0,0.7),
+    0 0 40px var(--electric-glow);
   position: relative;
   overflow: hidden;
 }
 .login-stripe {
   position: absolute; top: 0; left: 0; right: 0;
-  height: 6px; background: var(--amber);
+  height: 6px;
+  background: linear-gradient(90deg, var(--electric) 0%, var(--electric-deep) 50%, var(--electric) 100%);
 }
 .login-title {
   font-weight: 900;
   letter-spacing: 0.1em;
   font-size: 1.25rem;
   margin: 0.5rem 0 0.25rem;
-  color: var(--navy);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.login-logo {
+  width: 2.25rem;
+  height: 2.25rem;
+  object-fit: contain;
+  filter: drop-shadow(0 0 4px var(--electric-glow));
 }
 .login-sub { color: var(--muted); font-size: 0.85rem; margin: 0 0 1.5rem; }
 .login-form { display: flex; flex-direction: column; gap: 0.5rem; }
