@@ -1,9 +1,11 @@
-# CLOCKIN — Simulated Workplace
+# CLOCKIN — The Office Time Clock
 
 A simulated-workplace QR-badge time clock for CTE classrooms.
 Built by **Ciri** for an AI-powered classroom operations ecosystem.
 
 Students scan a printed QR badge to clock in and out of class as if reporting to a workplace. Teachers see a live dashboard of who's "on shift" each period and can export attendance to CSV for entry into the school's official system.
+
+![The CTEC kiosk — students scan here to clock in](docs/screenshot-kiosk.png)
 
 ---
 
@@ -252,6 +254,8 @@ From any classroom computer on the same network, open `http://your-server-ip:500
 6. Click **BADGES** to print a PDF of QR badges for the students you just uploaded.
 7. To add another teacher: **TEACHERS → + ADD TEACHER**. Give them their username and initial password in person. They'll be forced to change it on first login.
 
+![The teacher login screen](docs/screenshot-login.png)
+
 ---
 
 ## Daily workflow
@@ -267,10 +271,16 @@ From any classroom computer on the same network, open `http://your-server-ip:500
 - Filter by **A.M.** or **P.M.** with the period chips.
 - Click **EXPORT CSV** to get a file for entering into your school's official attendance system.
 
+![The teacher dashboard — today's clock-ins by period](docs/screenshot-dashboard.png)
+
 ### For admins
 - All of the above, plus:
 - On the dashboard and roster, toggle **VIEW: MY STUDENTS / ALL TEACHERS** to see other teachers' data.
 - Manage teacher accounts from the **TEACHERS** page (create, promote, reset password, deactivate).
+
+The roster page lists every student with buttons to edit, view history, deactivate, or delete:
+
+![The roster page](docs/screenshot-roster.png)
 
 ---
 
@@ -287,6 +297,10 @@ The kiosk supports three input modes:
 Default is USB scanner. The kiosk auto-resets 5 seconds after each scan.
 
 **Note on webcam mode:** browsers only allow camera access on `http://localhost` or HTTPS. If you'll be accessing the kiosk from other classroom computers over the LAN, the USB scanner and Type ID modes work over plain HTTP, but the in-browser camera does not.
+
+The **BADGES** page generates a print-ready PDF — 8 badges per US-letter page, each with a QR code, the student's name, role, and Employee ID:
+
+![Printable QR badge sheet](docs/screenshot-badges.png)
 
 ---
 
@@ -352,9 +366,13 @@ On the Roster page, click **EDIT** next to any student to open the edit form. Yo
 - **Course** — pick from your 5 courses or keep an existing custom value
 - **Note** — optional reason for the change (only saved when the role changes)
 
+![The employee edit form](docs/screenshot-edit.png)
+
 **Role changes are logged to a per-student history**, viewable by clicking **HISTORY** next to the row. Period and course changes are applied silently — they're routine administrative details that don't deserve a history record.
 
 The history page shows a timeline of every role change with the date, the teacher who made it, and the note. Useful for tracking "promotions" in the workplace simulation.
+
+![The role-change history timeline](docs/screenshot-history.png)
 
 ---
 
