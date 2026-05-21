@@ -1,0 +1,37 @@
+# CLOCKIN — web-editor deployment (pre-built image from GHCR)
+#
+# This file is for installing CLOCKIN WITHOUT cloning the repo or building
+# anything. It pulls a ready-made image from GitHub Container Registry.
+#
+# HOW TO USE:
+#   1. In Portainer: Stacks -> Add stack -> Web editor
+#   2. Paste this entire file into the editor
+#   3. Under "Environment variables", add:
+#        name:  CLOCKIN_SECRET
+#        value: a long random string (see README for how to generate one)
+#   4. Click "Deploy the stack"
+#
+# To update later: Stacks -> clockin -> "Pull and redeploy"
+# (pull_policy: always means it fetches the newest image automatically)
+#
+# NOTE: This differs from the regular compose.yml, which BUILDS the image
+# from source. This one DOWNLOADS a pre-built image instead.
+
+services:
+  clockin:
+    image: ghcr.io/chavi7/clockin:latest
+    container_name: clockin
+    restart: unless-stopped
+    pull_policy: always
+    ports:
+      # host:container — change the left number to use a different port
+      - "5000:5000"
+    environment:
+      - CLOCKIN_SECRET=${CLOCKIN_SECRET}
+    volumes:
+      # The SQLite database persists here, surviving redeploys.
+      - clockin-data:/app/data
+
+volumes:
+  clockin-data:
+    name: clockin-data

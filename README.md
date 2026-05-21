@@ -13,6 +13,7 @@ Students scan a printed QR badge to clock in and out of class as if reporting to
 
 - [What it does](#what-it-does)
 - [Install via Portainer (for teachers — easiest path)](#install-via-portainer-for-teachers--easiest-path)
+- [Install via Portainer — Web editor (pre-built image)](#install-via-portainer--web-editor-pre-built-image)
 - [Install manually (without Portainer)](#install-manually-without-portainer)
 - [What's in the box](#whats-in-the-box)
 - [Quick start (developer / source install)](#quick-start-developer--source-install)
@@ -42,7 +43,7 @@ Students scan a printed QR badge to clock in and out of class as if reporting to
 - Permanently delete a student with a type-to-confirm safety check, when they transfer out or you fix a data-entry mistake.
 - Export today's attendance to CSV for entry into your school's official attendance system.
 
-It does **NOT** replace your school's attendance system. It gives students ownership of their own clock-in routine and gives you a quick reference.
+It does **not** replace your school's attendance system. It gives students ownership of their own clock-in routine and gives you a quick reference.
 
 **The workplace simulation:** students at **CTEC** (the school) report to work at **Dragon Technologies** — a fictional company they "work for" during class. The kiosk and badges carry the Dragon Technologies logo, so badging in feels like reporting to a real employer. If you adopt this for your own classroom, the school name, company name, and logo are easy to swap — the names are plain text and the logo is one image file in `static/img/`.
 
@@ -118,6 +119,67 @@ That's it. The container rebuilds with the latest code, and your database surviv
 
 ---
 
+## Install via Portainer — Web editor (pre-built image)
+
+This is an alternative to the Repository method above. Instead of Portainer building the app from source, it downloads a ready-made image from GitHub Container Registry (GHCR). This is the simplest path if you just want to run CLOCKIN and never touch the code — no Git, no build, no GitHub account needed.
+
+The project includes a file called `compose.web-editor.yml` for exactly this.
+
+### Step 1 — Open Portainer
+
+**Stacks → + Add stack.** Name it `clockin`.
+
+### Step 2 — Choose Web editor
+
+Under **Build method**, click **Web editor**.
+
+### Step 3 — Paste the compose file
+
+Paste the contents of `compose.web-editor.yml` (in this repo) into the editor. It's short — it tells Portainer to pull `ghcr.io/chavi7/clockin:latest` and run it.
+
+### Step 4 — Add the secret
+
+Under **Environment variables**, add one:
+
+- **name:** `CLOCKIN_SECRET`
+- **value:** a long random string
+
+Generate one on any machine with Python:
+```bash
+python3 -c "import secrets; print(secrets.token_hex(32))"
+```
+
+Or, on a minimal system without Python:
+```bash
+head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n'; echo
+```
+
+### Step 5 — Deploy
+
+Click **Deploy the stack**. Portainer downloads the image and starts the container — faster than the Repository method since nothing is built locally.
+
+### Updating later (web editor method)
+
+The web-editor method runs a pre-built image, so updates have two parts:
+
+1. **A new image must be published to GHCR.** Whoever maintains the project rebuilds and pushes it (see "Publishing a new image" below).
+2. **Then redeploy:** in Portainer, **Stacks → clockin → Pull and redeploy.** Because the compose file sets `pull_policy: always`, this fetches the newest image.
+
+### Publishing a new image (maintainer only)
+
+If you maintain CLOCKIN and want to publish an updated image to GHCR:
+
+```bash
+# On a machine with Docker, from the project folder:
+docker login ghcr.io -u YOUR_GITHUB_USERNAME      # use a token with write:packages
+docker build -t ghcr.io/YOUR_GITHUB_USERNAME/clockin:latest .
+docker push ghcr.io/YOUR_GITHUB_USERNAME/clockin:latest
+```
+
+Then anyone running the web-editor stack gets the update on their next "Pull and redeploy."
+
+---
+
 ## Install manually (without Portainer)
 
 If you'd rather use the command line and you have Docker installed:
@@ -145,7 +207,8 @@ clockin/
 ├── README.md                       # this file
 ├── LICENSE                         # MIT
 ├── Dockerfile                      # builds the production container image
-├── compose.yml                     # Docker Compose service definition
+├── compose.yml                     # Docker Compose — builds from source
+├── compose.web-editor.yml          # Docker Compose — pulls pre-built image from GHCR
 ├── .dockerignore                   # files Docker excludes from the image
 ├── .env.example                    # template for environment variables
 ├── .gitignore
