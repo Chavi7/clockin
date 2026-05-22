@@ -579,7 +579,7 @@ These are deliberate cuts to keep the MVP small enough to validate in real class
 This is **Module 1** of a larger system. Upcoming modules will hang off the same database:
 
 - **Ticket Management Agent** — students submit and resolve troubleshooting tickets like real help desk technicians
-- **Inventory Manager AI** — asset tracking, check-out/check-in of hardware
+- **Inventory Manager** — asset tracking, check-out/check-in of hardware
 - **Lab Dispatch Agent** — assign individualized labs and work orders
 - **AI Tutor Agent** — Socratic guidance for certification prep
 - **Incident Response Agent** — generate cybersecurity scenarios for SOC simulation
