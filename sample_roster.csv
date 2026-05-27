@@ -1,24 +1,24 @@
-employee_id,first_name,last_name,school,student_id,role,course,period
-,Alex,Rivera,Lincoln High,128431,Help Desk Manager,IT Fundamentals,A.M.
-,Sam,Chen,Lincoln High,128765,Inventory Manager,IT Fundamentals,A.M.
-,Jordan,Patel,Lincoln High,128902,6S Manager,IT Fundamentals,A.M.
-,Riley,Nguyen,Lincoln High,129114,Human Resource Manager,IT Fundamentals,A.M.
-,Casey,Brooks,Lincoln High,129332,On-Site Manager,IT Fundamentals,A.M.
-,Morgan,Diaz,Lincoln High,129501,Desktop Technician,IT Fundamentals,A.M.
-,Avery,Kim,Lincoln High,129677,Desktop Technician,IT Fundamentals,A.M.
-,Taylor,Singh,Lincoln High,129812,Desktop Technician,IT Fundamentals,A.M.
-,Quinn,Murphy,Lincoln High,130055,Help Desk Technician,IT Fundamentals,A.M.
-,Sky,Vasquez,Lincoln High,130198,Help Desk Technician,IT Fundamentals,A.M.
-,Devon,Park,Lincoln High,130244,Junior Technician,IT Fundamentals,A.M.
-,Reese,Henderson,Lincoln High,130412,Junior Technician,IT Fundamentals,A.M.
-,Bailey,Walsh,Lincoln High,131005,Help Desk Manager,Cybersecurity 1,P.M.
-,Hayden,Mercer,Lincoln High,131120,SOC Analyst,Cybersecurity 1,P.M.
-,Cameron,Webb,Lincoln High,131233,Incident Responder,Cybersecurity 1,P.M.
-,Emerson,Tate,Lincoln High,131388,Threat Hunter,Cybersecurity 1,P.M.
-,Phoenix,Reyes,Lincoln High,131502,SOC Analyst,Cybersecurity 1,P.M.
-,Drew,Larson,Lincoln High,132011,Field Tech Lead,Computer Engineering 1,A.M.
-,Logan,Pierce,Lincoln High,132166,Hardware Technician,Computer Engineering 1,A.M.
-,Parker,Ortega,Lincoln High,132310,Hardware Technician,Computer Engineering 1,A.M.
-,Indy,Calloway,Lincoln High,133007,Senior Technician,Computer Engineering 2,P.M.
-,Sage,Bellamy,Lincoln High,133122,Systems Engineer,Computer Engineering 2,P.M.
-,River,Costa,Lincoln High,133290,Systems Engineer,Computer Engineering 2,P.M.
+name,student_id,school_year,school,role,course,period
+Alex Rivera,128431,2026-2027,CTEC,Help Desk Manager,IT Fundamentals,A.M.
+Sam Chen,128765,2026-2027,CTEC,Inventory Manager,IT Fundamentals,A.M.
+Jordan Patel,128902,2026-2027,CTEC,6S Manager,IT Fundamentals,A.M.
+Riley Nguyen,129114,2026-2027,CTEC,Human Resource Manager,IT Fundamentals,A.M.
+Casey Brooks,129332,2026-2027,CTEC,On-Site Manager,IT Fundamentals,A.M.
+Morgan Diaz,129501,2026-2027,CTEC,Desktop Technician,IT Fundamentals,A.M.
+Avery Kim,129677,2026-2027,CTEC,Desktop Technician,IT Fundamentals,A.M.
+Taylor Singh,129812,2026-2027,CTEC,Desktop Technician,IT Fundamentals,A.M.
+Quinn Murphy,130055,2026-2027,CTEC,Help Desk Technician,IT Fundamentals,A.M.
+Sky Vasquez,130198,2026-2027,CTEC,Help Desk Technician,IT Fundamentals,A.M.
+Devon Park,130244,2026-2027,CTEC,Junior Technician,IT Fundamentals,A.M.
+Reese Henderson,130412,2026-2027,CTEC,Junior Technician,IT Fundamentals,A.M.
+Bailey Walsh,131005,2026-2027,CTEC,Help Desk Manager,Cybersecurity 1,P.M.
+Hayden Mercer,131120,2026-2027,CTEC,SOC Analyst,Cybersecurity 1,P.M.
+Cameron Webb,131233,2026-2027,CTEC,Incident Responder,Cybersecurity 1,P.M.
+Emerson Tate,131388,2026-2027,CTEC,Threat Hunter,Cybersecurity 1,P.M.
+Phoenix Reyes,131502,2026-2027,CTEC,SOC Analyst,Cybersecurity 1,P.M.
+Drew Larson,132011,2026-2027,CTEC,Field Tech Lead,Computer Engineering 1,A.M.
+Logan Pierce,132166,2026-2027,CTEC,Hardware Technician,Computer Engineering 1,A.M.
+Parker Ortega,132310,2026-2027,CTEC,Hardware Technician,Computer Engineering 1,A.M.
+Indy Calloway,133007,2026-2027,CTEC,Senior Technician,Computer Engineering 2,P.M.
+Sage Bellamy,133122,2026-2027,CTEC,Systems Engineer,Computer Engineering 2,P.M.
+River Costa,133290,2026-2027,CTEC,Systems Engineer,Computer Engineering 2,P.M.

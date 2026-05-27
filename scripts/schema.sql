@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS employees (
     first_name        TEXT    NOT NULL,
     last_name         TEXT    NOT NULL,
     student_id        TEXT,
+    school_year       TEXT,
     role              TEXT,
     course            TEXT,
     period            TEXT,

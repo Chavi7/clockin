@@ -26,7 +26,12 @@
     <div class="badge-actions">
       <a href="{{ url_for('roster_template_blank') }}" class="btn btn-secondary">⬇ BLANK TEMPLATE</a>
       <a href="{{ url_for('roster_template_example') }}" class="btn btn-secondary">⬇ EXAMPLE TEMPLATE</a>
+      <a href="{{ url_for('roster_export', scope='all' if view_all else None) }}" class="btn btn-secondary">⬇ EXPORT ROSTER</a>
     </div>
+    <p class="muted" style="margin-top:0.5rem; font-size:0.85rem;">
+      EXPORT ROSTER downloads the full student list (including Employee IDs and
+      school year) — use it as the source for ID-card printing.
+    </p>
 
     <details class="csv-help">
       <summary>What goes in each column?</summary>

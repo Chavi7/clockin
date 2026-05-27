@@ -149,6 +149,12 @@ def init_db():
     if "courses" not in cols:
         db.execute("ALTER TABLE teachers ADD COLUMN courses TEXT NOT NULL DEFAULT ''")
 
+    # Migration: add employees.school_year for databases created before
+    # the ID-card update. Adding a nullable TEXT column is safe in SQLite.
+    emp_cols = [r[1] for r in db.execute("PRAGMA table_info(employees)").fetchall()]
+    if "school_year" not in emp_cols:
+        db.execute("ALTER TABLE employees ADD COLUMN school_year TEXT")
+
     db.commit()
     db.close()
 
@@ -720,6 +726,70 @@ def roster():
     return render_template("roster.html", employees=employees, view_all=view_all)
 
 
+@app.route("/roster/export.csv")
+@login_required
+def roster_export():
+    """Export the full roster as a CSV.
+
+    Unlike the dashboard export (which is today's attendance), this is the
+    student master list — including employee_id, student_id, and school_year.
+    It is the file you feed into a spreadsheet to build ID cards: add a
+    formula column that assembles the QR JSON, then import into card software.
+    """
+    user = current_user()
+    db = get_db()
+    view_all = user["role"] == "admin" and request.args.get("scope") == "all"
+
+    sql = """
+        SELECT e.employee_id, e.first_name, e.last_name, e.student_id,
+               e.school_year, e.school, e.role, e.course, e.period,
+               e.active, t.full_name AS owner_name
+        FROM employees e
+        LEFT JOIN teachers t ON t.id = e.owner_teacher_id
+    """
+    params = []
+    if not view_all:
+        sql += " WHERE e.owner_teacher_id = ?"
+        params.append(user["id"])
+    sql += " ORDER BY e.active DESC, e.period, e.last_name, e.first_name"
+
+    rows = db.execute(sql, params).fetchall()
+
+    out = io.StringIO()
+    writer = csv.writer(out)
+    header = ["employee_id", "name", "first_name", "last_name", "student_id",
+              "school_year", "school", "role", "course", "period", "active"]
+    if view_all:
+        header.append("owner_teacher")
+    writer.writerow(header)
+
+    for r in rows:
+        full_name = f"{r['first_name']} {r['last_name']}".strip()
+        row = [
+            r["employee_id"],
+            full_name,
+            r["first_name"],
+            r["last_name"],
+            r["student_id"] or "",
+            r["school_year"] or "",
+            r["school"] or "",
+            r["role"] or "",
+            r["course"] or "",
+            r["period"] or "",
+            "yes" if r["active"] else "no",
+        ]
+        if view_all:
+            row.append(r["owner_name"] or "")
+        writer.writerow(row)
+
+    return Response(
+        out.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition":
+                 f"attachment; filename=roster_export_{today_str()}.csv"},
+    )
+
+
 # ------------------------------------------------------------
 # Period normalization. The system only stores 'A.M.' or 'P.M.'
 # Anything else gets stored as the empty string (unassigned).
@@ -898,6 +968,21 @@ def next_employee_id(db, prefix):
     return f"{prefix}-{max_num + 1:03d}"
 
 
+def split_name(full_name):
+    """Split a single name string into (first, last).
+
+    First word is the first name; everything after is the last name, so
+    multi-word surnames like 'De La Cruz' stay intact. A single-word name
+    becomes the first name with an empty last name.
+    """
+    parts = (full_name or "").strip().split()
+    if not parts:
+        return "", ""
+    if len(parts) == 1:
+        return parts[0], ""
+    return parts[0], " ".join(parts[1:])
+
+
 @app.route("/roster/upload", methods=["POST"])
 @login_required
 def upload_roster():
@@ -914,12 +999,25 @@ def upload_roster():
         return redirect(url_for("roster"))
 
     reader = csv.DictReader(io.StringIO(text))
-    required = {"employee_id", "first_name", "last_name", "school"}
-    if not required.issubset({h.strip().lower() for h in reader.fieldnames or []}):
+    headers = {h.strip().lower() for h in reader.fieldnames or []}
+
+    # Name can be supplied two ways:
+    #   - a single 'name' column (new format), OR
+    #   - separate 'first_name' + 'last_name' columns (old format).
+    # 'school' is always required. 'employee_id' is optional (auto-generated).
+    has_single_name = "name" in headers
+    has_split_name = {"first_name", "last_name"}.issubset(headers)
+
+    if not (has_single_name or has_split_name):
         flash(
-            f"CSV missing required columns. Need at least: {', '.join(sorted(required))}.",
+            "CSV missing a name column. Provide either a 'name' column, "
+            "or both 'first_name' and 'last_name'.",
             "error",
         )
+        return redirect(url_for("roster"))
+
+    if "school" not in headers:
+        flash("CSV missing required column: school.", "error")
         return redirect(url_for("roster"))
 
     db = get_db()
@@ -936,8 +1034,17 @@ def upload_roster():
     for line_num, row in enumerate(reader, start=2):  # line 2 = first data row after header
         norm = {k.strip().lower(): (v.strip() if v else "") for k, v in row.items()}
 
+        # Resolve first/last name from either the single 'name' column or
+        # the separate first_name/last_name columns. Single 'name' wins
+        # if both happen to be present.
+        if norm.get("name"):
+            fn, ln = split_name(norm["name"])
+            norm["first_name"], norm["last_name"] = fn, ln
+        # else: first_name / last_name already in norm from the old format
+
         # Skip totally blank rows
-        if not any(norm.get(k) for k in ("employee_id", "first_name", "last_name")):
+        if not any(norm.get(k) for k in
+                   ("employee_id", "first_name", "last_name", "name")):
             continue
 
         # Normalize period: only 'A.M.' or 'P.M.' are accepted; everything else is blank.
@@ -947,9 +1054,10 @@ def upload_roster():
             bad_period_rows.append(f"{norm.get('first_name','')} {norm.get('last_name','')} (line {line_num}, value: {raw_period!r})")
         norm["period"] = period_value
 
-        # Name is required
-        if not norm.get("first_name") or not norm.get("last_name"):
-            flash(f"Row {line_num}: missing first or last name — skipped.", "warning")
+        # Name is required. With the single 'name' column, last name may be
+        # empty (one-word name) — only the first name is strictly required.
+        if not norm.get("first_name"):
+            flash(f"Row {line_num}: missing student name — skipped.", "warning")
             continue
 
         eid = norm.get("employee_id", "").upper().strip()
@@ -989,13 +1097,14 @@ def upload_roster():
                 db.execute("""
                     UPDATE employees
                     SET school = ?, first_name = ?, last_name = ?, student_id = ?,
-                        role = ?, course = ?, period = ?, active = 1
+                        school_year = ?, role = ?, course = ?, period = ?, active = 1
                     WHERE employee_id = ?
                 """, (
                     norm.get("school", ""),
                     norm["first_name"],
                     norm["last_name"],
                     norm.get("student_id", ""),
+                    norm.get("school_year", ""),
                     norm.get("role", ""),
                     norm.get("course", ""),
                     norm.get("period", ""),
@@ -1013,14 +1122,15 @@ def upload_roster():
             db.execute("""
                 INSERT INTO employees
                   (employee_id, school, first_name, last_name, student_id,
-                   role, course, period, owner_teacher_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                   school_year, role, course, period, owner_teacher_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 eid,
                 norm.get("school", ""),
                 norm["first_name"],
                 norm["last_name"],
                 norm.get("student_id", ""),
+                norm.get("school_year", ""),
                 norm.get("role", ""),
                 norm.get("course", ""),
                 norm.get("period", ""),
@@ -1075,8 +1185,8 @@ def upload_roster():
 @login_required
 def roster_template_blank():
     """Empty CSV with just the headers."""
-    headers = ["employee_id", "first_name", "last_name", "school",
-               "student_id", "role", "course", "period"]
+    headers = ["name", "student_id", "school_year", "school",
+               "role", "course", "period"]
     out = io.StringIO()
     writer = csv.writer(out)
     writer.writerow(headers)
@@ -1093,30 +1203,33 @@ def roster_template_blank():
 @login_required
 def roster_template_example():
     """CSV with example rows showing valid data and column conventions."""
-    headers = ["employee_id", "first_name", "last_name", "school",
-               "student_id", "role", "course", "period"]
+    headers = ["name", "student_id", "school_year", "school",
+               "role", "course", "period"]
     rows = [
-        # Leave employee_id BLANK to auto-generate — these will become ITF-001, ITF-002, etc.
-        # The 'period' column is either 'A.M.' or 'P.M.' (these are the only accepted values).
-        ["", "Alex", "Rivera", "Lincoln High", "128431",
+        # Employee IDs are auto-generated on import — these become
+        # ITF-001, ITF-002, etc. The 'name' column is a single full name;
+        # CLOCKIN splits it into first/last automatically.
+        # 'period' is either 'A.M.' or 'P.M.' (the only accepted values).
+        ["Alex Rivera", "128431", "2026-2027", "CTEC",
          "Help Desk Manager", "IT Fundamentals", "A.M."],
-        ["", "Sam", "Chen", "Lincoln High", "128765",
+        ["Sam Chen", "128765", "2026-2027", "CTEC",
          "Inventory Manager", "IT Fundamentals", "A.M."],
-        ["", "Jordan", "Patel", "Lincoln High", "128902",
+        ["Jordan Patel", "128902", "2026-2027", "CTEC",
          "6S Manager", "IT Fundamentals", "A.M."],
 
         # Cybersecurity 1 — will become CYB1-001, CYB1-002
-        ["", "Bailey", "Walsh", "Lincoln High", "131005",
+        ["Bailey Walsh", "131005", "2026-2027", "CTEC",
          "Help Desk Manager", "Cybersecurity 1", "P.M."],
-        ["", "Hayden", "Mercer", "Lincoln High", "131120",
+        ["Hayden Mercer", "131120", "2026-2027", "CTEC",
          "SOC Analyst", "Cybersecurity 1", "P.M."],
 
         # Computer Engineering 1 — will become CE1-001
-        ["", "Drew", "Larson", "Lincoln High", "132011",
+        ["Drew Larson", "132011", "2026-2027", "CTEC",
          "Field Tech Lead", "Computer Engineering 1", "A.M."],
 
-        # Override the auto-generated ID with a custom one
-        ["CUSTOM-007", "Indy", "Calloway", "Lincoln High", "133007",
+        # A multi-word surname stays intact: first name "Maria",
+        # last name "De La Cruz".
+        ["Maria De La Cruz", "133007", "2026-2027", "CTEC",
          "Senior Technician", "Computer Engineering 2", "P.M."],
     ]
 
