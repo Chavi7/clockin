@@ -22,6 +22,7 @@ Students scan a printed QR badge to clock in and out of class as if reporting to
 - [Daily workflow](#daily-workflow)
 - [Hardware options for the kiosk](#hardware-options-for-the-kiosk)
 - [Roster CSV format](#roster-csv-format)
+- [Exporting the roster (and printing PVC ID cards)](#exporting-the-roster-and-printing-pvc-id-cards)
 - [Editing a student](#editing-a-student)
 - [Deleting a student](#deleting-a-student)
 - [Password resets](#password-resets)
@@ -236,7 +237,7 @@ clockin/
 │   └── js/
 │       ├── jsQR.js                 # QR-decoding library (self-hosted, no CDN)
 │       └── kiosk.js                # scanner + camera + manual input controller
-├── docs/                           # screenshots used in this README
+├── docs/                           # screenshots + ID_CARD_WORKFLOW.md
 └── data/                           # SQLite database lives here (auto-created)
 ```
 
@@ -320,7 +321,7 @@ From any classroom computer on the same network, open `http://your-server-ip:500
 2. The system detects there are no accounts and redirects you to **/setup**.
 3. Enter your full name, a username, an optional email, your courses (also optional), and a password (at least 8 characters). This becomes the first admin account.
 4. Log in with your username and password.
-5. Click **ROSTER** and upload your CSV. Use the **BLANK TEMPLATE** or **EXAMPLE TEMPLATE** button to download a starter file.
+5. Click **ROSTER** and upload your CSV. Use the **BLANK TEMPLATE** or **EXAMPLE TEMPLATE** button to download a starter file. (The **EXPORT ROSTER** button on the same page downloads your roster back out — useful later for printing PVC ID cards.)
 6. Click **BADGES** to print a PDF of QR badges for the students you just uploaded.
 7. To add another teacher: **TEACHERS → + ADD TEACHER**. Give them their username and initial password in person. They'll be forced to change it on first login.
 
@@ -384,14 +385,16 @@ If you want to start from scratch, click **BLANK TEMPLATE** instead — just the
 
 | Column | Required? | What it is |
 |---|---|---|
-| `employee_id` | Optional | Leave blank to auto-generate. Fill in only if you want a specific ID. |
-| `first_name` | Required | Appears on the badge. |
-| `last_name` | Required | Appears on the badge. |
-| `school` | Required | The real school name. Appears on the badge header. (The Dragon Technologies company branding is built into the app — this field is the actual school.) |
-| `student_id` | Optional | Your school's official student ID number. |
-| `role` | Optional | Workplace role (Help Desk Manager, Desktop Technician, SOC Analyst, etc.). Appears on the badge. |
+| `name` | Required | The student's full name in one column (e.g. `Alex Rivera`). The app splits it on import — first word becomes the first name, the rest becomes the last name, so multi-word surnames like `Maria De La Cruz` stay intact. |
+| `student_id` | Recommended | Your school's official student ID number. Used as the "SCHOOL ID #" on printed PVC cards. Encoded in the badge QR. |
+| `school_year` | Optional | Academic year like `2026-2027`. Used on PVC ID cards. CLOCKIN itself doesn't display it; it's stored so the roster export can feed the card-printing workflow. |
+| `school` | Required | The real school name. Appears on the paper badge header. (The Dragon Technologies company branding is built into the app — this field is the actual school.) |
+| `role` | Optional | Workplace role (Help Desk Manager, Desktop Technician, SOC Analyst, etc.). Appears on the paper badge. |
 | `course` | Recommended | Which class. Used for the auto-generated Employee ID prefix. |
 | `period` | Optional | Must be `A.M.` or `P.M.`. Variants like `am`, `morning`, `afternoon`, `1`, `2` get normalized automatically. |
+| `employee_id` | Optional | Leave out entirely or leave blank to auto-generate. Fill in only if you want a specific ID (e.g. matching a school-issued number). |
+
+**Backward compatibility:** older CSVs that use separate `first_name` and `last_name` columns still upload correctly. If both `name` and `first_name`/`last_name` are present, `name` wins.
 
 ### Auto-generated Employee IDs
 
@@ -424,6 +427,23 @@ Recognized variants for each course:
 - **Computer Engineering 2** — `Comp Eng 2`, `CompE 2`, `CE2`
 
 Anything else gets stored as you typed it.
+
+---
+
+## Exporting the roster (and printing PVC ID cards)
+
+The Roster page has an **EXPORT ROSTER** button that downloads a CSV of your full student list, including the auto-generated Employee IDs, the `student_id`, and the `school_year`. This is different from the dashboard's attendance export — that one is just today's clock-ins. This one is the master student list.
+
+Why it matters: the export is what feeds the **physical PVC ID card** workflow. CLOCKIN is the master roster (it owns the Employee IDs); the export gives you a CSV that can be enriched in a spreadsheet and fed into card-printing software for batch printing on a MagiCard 600 (or similar).
+
+The complete card workflow, including the spreadsheet formula that builds a QR-data column for the card printer, is in `docs/ID_CARD_WORKFLOW.md`. Short version:
+
+1. Click **EXPORT ROSTER** on the Roster page
+2. Open the CSV in Excel or Numbers; add a `photo` column (filename per student) and a `qr_data` column (one formula assembles the QR JSON from the other columns)
+3. In the card software, point its database/batch feature at the CSV and map columns to the front and back fields
+4. Batch print — every card gets its photo, QR, and text fields automatically
+
+The QR data in that workflow is the **same JSON** the paper badge QR uses, so a PVC card printed this way and a paper badge from the BADGES page both scan identically at the kiosk.
 
 ---
 
@@ -576,14 +596,14 @@ These are deliberate cuts to keep the MVP small enough to validate in real class
 
 ## What's next
 
-This is **Module 1** of a larger system. Upcoming modules will hang off the same database:
+This is **Module 1** of a larger system. Upcoming modules will be **independent containers** that share the CLOCKIN-issued `employee_id` as their integration key — students scan the same physical badge across every module:
 
+- **Inventory Manager** — asset tracking, check-out/check-in of classroom hardware
 - **Ticket Management Agent** — students submit and resolve troubleshooting tickets like real help desk technicians
-- **Inventory Manager** — asset tracking, check-out/check-in of hardware
 - **Lab Dispatch Agent** — assign individualized labs and work orders
 - **AI Tutor Agent** — Socratic guidance for certification prep
 - **Incident Response Agent** — generate cybersecurity scenarios for SOC simulation
 
-The `employees` table is the foreign key everything else will hang off of, so today's data carries forward without migration when those modules arrive.
+Each module owns its own database. They sync students via CSV export from CLOCKIN (the master roster), keyed on `employee_id`. This keeps modules independently deployable and prevents one app from breaking another — at the cost of needing to re-sync rosters when students change.
 
 — Ciri
