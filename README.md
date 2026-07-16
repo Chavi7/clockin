@@ -604,6 +604,6 @@ This is **Module 1** of a larger system. Upcoming modules will be **independent 
 - **AI Tutor Agent** — Socratic guidance for certification prep
 - **Incident Response Agent** — generate cybersecurity scenarios for SOC simulation
 
-Each module owns its own database. They sync students via CSV export from CLOCKIN (the master roster), keyed on `employee_id`. This keeps modules independently deployable and prevents one app from breaking another — at the cost of needing to re-sync rosters when students change.
+Each module owns its own database. They sync students via CSV export from CLOCKIN (the master roster), keyed on `employee_id`. The **Inventory Manager** can also pull the roster directly from CLOCKIN's `/api/roster` endpoint (protected by a shared `CLOCKIN_API_KEY`), avoiding the CSV step entirely. Both apps join a shared Docker network (`ctec-net`) so they can reach each other by container name. This keeps modules independently deployable while removing the manual sync friction.
 
 — Ciri

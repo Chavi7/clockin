@@ -28,10 +28,17 @@ services:
       - "5000:5000"
     environment:
       - CLOCKIN_SECRET=${CLOCKIN_SECRET}
+      - CLOCKIN_API_KEY=${CLOCKIN_API_KEY}
     volumes:
       # The SQLite database persists here, surviving redeploys.
       - clockin-data:/app/data
+    networks:
+      - ctec-net
 
 volumes:
   clockin-data:
     name: clockin-data
+
+networks:
+  ctec-net:
+    external: true
