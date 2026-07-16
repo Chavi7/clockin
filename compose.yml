@@ -17,10 +17,19 @@ services:
     environment:
       # CLOCKIN_SECRET is pulled from .env — never commit the real value.
       - CLOCKIN_SECRET=${CLOCKIN_SECRET}
+      # Shared secret for the Inventory Manager roster sync API.
+      # Must match CLOCKIN_API_KEY set on the inventory-manager container.
+      - CLOCKIN_API_KEY=${CLOCKIN_API_KEY}
     volumes:
       # Persist the SQLite database outside the container so it survives rebuilds.
       - clockin-data:/app/data
+    networks:
+      - ctec-net
 
 volumes:
   clockin-data:
     name: clockin-data
+
+networks:
+  ctec-net:
+    external: true
