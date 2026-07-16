@@ -161,23 +161,21 @@ Click **Deploy the stack**. Portainer downloads the image and starts the contain
 
 ### Updating later (web editor method)
 
-The web-editor method runs a pre-built image, so updates have two parts:
+The web-editor method runs a pre-built image. Updates are automatic — every
+push to `main` builds and publishes a new image to GHCR. In Portainer, just:
 
-1. **A new image must be published to GHCR.** Whoever maintains the project rebuilds and pushes it (see "Publishing a new image" below).
-2. **Then redeploy:** in Portainer, **Stacks → clockin → Pull and redeploy.** Because the compose file sets `pull_policy: always`, this fetches the newest image.
+**Stacks → clockin → Pull and redeploy.**
 
-### Publishing a new image (maintainer only)
+Because the compose file sets `pull_policy: always`, Portainer fetches the
+newest image and restarts the container. The database in the `clockin-data`
+volume is untouched.
 
-If you maintain CLOCKIN and want to publish an updated image to GHCR:
+### Publishing a new image (automatic)
 
-```bash
-# On a machine with Docker, from the project folder:
-docker login ghcr.io -u YOUR_GITHUB_USERNAME      # use a token with write:packages
-docker build -t ghcr.io/YOUR_GITHUB_USERNAME/clockin:latest .
-docker push ghcr.io/YOUR_GITHUB_USERNAME/clockin:latest
-```
-
-Then anyone running the web-editor stack gets the update on their next "Pull and redeploy."
+The image is built and pushed to GHCR automatically by a GitHub Actions workflow
+on every push to `main` and on every tagged release (see `.github/workflows/publish.yml`).
+No manual steps are needed — just push to `main` and the new `:latest` image is
+available within minutes.
 
 ---
 
