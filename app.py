@@ -1758,6 +1758,77 @@ def teacher_reset_password(tid):
 
 
 # ============================================================
+# API — roster sync for the CLOCKIN ↔ Inventory Manager bridge
+# ============================================================
+def _api_auth():
+    """Return True if the request carries a valid CLOCKIN_API_KEY.
+
+    Accepts the key as a ?key= query parameter or an Authorization: Bearer
+    header.  If CLOCKIN_API_KEY is not configured the API is disabled and
+    every request is denied — no default, no backdoor.
+    """
+    expected = os.environ.get("CLOCKIN_API_KEY")
+    if not expected:
+        return False
+    provided = request.args.get("key") or ""
+    if not provided:
+        auth = request.headers.get("Authorization", "")
+        if auth.startswith("Bearer "):
+            provided = auth[7:]
+    return secrets.compare_digest(provided, expected)
+
+
+@app.route("/api/roster")
+def api_roster():
+    """Return the full employee roster as JSON.
+
+    Query params:
+      active=1   restrict to active employees only (default: all)
+
+    Auth: requires a valid CLOCKIN_API_KEY via ?key= or Authorization header.
+    Returns 401 if the key is missing or wrong, 503 if the API is not
+    configured on this instance.
+    """
+    api_key_configured = bool(os.environ.get("CLOCKIN_API_KEY"))
+    if not api_key_configured:
+        return jsonify({"error": "API not enabled"}), 503
+    if not _api_auth():
+        return jsonify({"error": "unauthorized"}), 401
+
+    active_only = request.args.get("active") == "1"
+    db = get_db()
+
+    if active_only:
+        rows = db.execute(
+            "SELECT employee_id, first_name, last_name, student_id"
+            "  FROM employees WHERE active = 1 ORDER BY employee_id"
+        ).fetchall()
+        employees = []
+        for r in rows:
+            employees.append({
+                "employee_id": r["employee_id"],
+                "name": f"{r['first_name']} {r['last_name']}".strip(),
+                "student_id": r["student_id"] or "",
+                "active": True,
+            })
+    else:
+        rows = db.execute(
+            "SELECT employee_id, first_name, last_name, student_id, active"
+            "  FROM employees ORDER BY employee_id"
+        ).fetchall()
+        employees = []
+        for r in rows:
+            employees.append({
+                "employee_id": r["employee_id"],
+                "name": f"{r['first_name']} {r['last_name']}".strip(),
+                "student_id": r["student_id"] or "",
+                "active": bool(r["active"]),
+            })
+
+    return jsonify({"employees": employees})
+
+
+# ============================================================
 # ERROR HANDLERS
 # ============================================================
 @app.errorhandler(403)
