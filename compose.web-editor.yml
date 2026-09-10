@@ -24,8 +24,10 @@ services:
     restart: unless-stopped
     pull_policy: always
     ports:
-      # host:container — change the left number to use a different port
-      - "5000:5000"
+      # host:container — bound to localhost only; this app handles student PII
+      # and must never be reachable from the LAN directly. Put a reverse
+      # proxy in front if remote access is needed.
+      - "127.0.0.1:5000:5000"
     environment:
       - CLOCKIN_SECRET=${CLOCKIN_SECRET}
       - CLOCKIN_API_KEY=${CLOCKIN_API_KEY}
