@@ -1763,18 +1763,19 @@ def teacher_reset_password(tid):
 def _api_auth():
     """Return True if the request carries a valid CLOCKIN_API_KEY.
 
-    Accepts the key as a ?key= query parameter or an Authorization: Bearer
-    header.  If CLOCKIN_API_KEY is not configured the API is disabled and
-    every request is denied — no default, no backdoor.
+    Requires the Authorization request header, using the Bearer scheme.
+    The old ?key= query-param form has been removed — gunicorn access logs
+    line including query strings, so a query param would leak the secret
+    into every log line. If CLOCKIN_API_KEY is not configured the API is
+    disabled and every request is denied — no default, no backdoor.
     """
     expected = os.environ.get("CLOCKIN_API_KEY")
     if not expected:
         return False
-    provided = request.args.get("key") or ""
-    if not provided:
-        auth = request.headers.get("Authorization", "")
-        if auth.startswith("Bearer "):
-            provided = auth[7:]
+    provided = ""
+    auth = request.headers.get("Authorization", "")
+    if auth.startswith("Bearer "):
+        provided = auth[7:]
     return secrets.compare_digest(provided, expected)
 
 
@@ -1785,9 +1786,9 @@ def api_roster():
     Query params:
       active=1   restrict to active employees only (default: all)
 
-    Auth: requires a valid CLOCKIN_API_KEY via ?key= or Authorization header.
-    Returns 401 if the key is missing or wrong, 503 if the API is not
-    configured on this instance.
+    Auth: requires a valid CLOCKIN_API_KEY via the Authorization: Bearer
+    header (see _api_auth). Returns 401 if the key is missing or wrong,
+    503 if the API is not configured on this instance.
     """
     api_key_configured = bool(os.environ.get("CLOCKIN_API_KEY"))
     if not api_key_configured:

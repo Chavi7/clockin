@@ -12,8 +12,10 @@ services:
     container_name: clockin
     restart: unless-stopped
     ports:
-      # host:container — change the left number to remap (e.g. "8080:5000")
-      - "${CLOCKIN_PORT:-5000}:5000"
+      # host:container — bound to localhost only; this app handles student PII
+      # and must never be reachable from the LAN. Change the left number to
+      # remap (e.g. "127.0.0.1:8080:5000"), but keep the 127.0.0.1 prefix.
+      - "127.0.0.1:${CLOCKIN_PORT:-5000}:5000"
     environment:
       # CLOCKIN_SECRET is pulled from .env — never commit the real value.
       - CLOCKIN_SECRET=${CLOCKIN_SECRET}
