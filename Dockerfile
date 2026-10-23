@@ -50,4 +50,13 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
 
 # Gunicorn = production-grade WSGI server (replaces Flask's dev server).
 # 2 workers is enough for a single classroom; bump later if needed.
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--timeout", "60", "--access-logfile", "-", "app:app"]
+#
+# --preload imports app:app ONCE in the master before forking, which does two
+# things that matter here:
+#   1. A misconfigured secret (see _resolve_secret in app.py) kills the master
+#      and exits the container, instead of a worker dying in a quiet respawn
+#      loop while the container stays "up".
+#   2. The schema init/migration at import time runs once instead of racing
+#      between two workers on first boot.
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--timeout", "60", \
+     "--preload", "--access-logfile", "-", "app:app"]

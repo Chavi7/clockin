@@ -11,6 +11,7 @@ import json
 import os
 import secrets
 import sqlite3
+import sys
 from datetime import date, datetime, timedelta
 from functools import wraps
 from pathlib import Path
@@ -26,6 +27,69 @@ from flask import (
 # CONFIG
 # ============================================================
 BASE_DIR = Path(__file__).resolve().parent
+
+# ============================================================
+# SESSION SECRET — fail fast instead of failing silently
+# ============================================================
+# compose.yml passes `CLOCKIN_SECRET=${CLOCKIN_SECRET}` straight through, so an
+# unset variable arrives in the container as an *empty string* — not missing.
+# Flask then has secret_key == "", which raises "The session is unavailable
+# because no secret key was set" on every session-touching route: /login and
+# /setup return 500 while the kiosk page still answers 200. The container looks
+# healthy and nobody can log in. Refusing to start is the honest failure.
+SECRET_ENV = "CLOCKIN_SECRET"
+DEV_SECRET = "dev-secret-change-me-in-production"
+MIN_SECRET_LENGTH = 16
+
+
+def _resolve_secret():
+    """Return the session signing key, or exit with a readable explanation."""
+    if SECRET_ENV not in os.environ:
+        # Local `python app.py` with no setup at all — the documented source
+        # workflow. Still works, but say out loud that it is not production-safe.
+        print(
+            f"WARNING: {SECRET_ENV} is not set. Using the built-in development "
+            "secret: sessions are not secure and will not survive a restart.\n"
+            "         Set it to a long random value before deploying.\n"
+            '         python3 -c "import secrets; print(secrets.token_hex(32))"',
+            file=sys.stderr,
+        )
+        return DEV_SECRET
+
+    value = os.environ[SECRET_ENV].strip()
+
+    if not value:
+        sys.exit(
+            f"\nCLOCKIN refuses to start: {SECRET_ENV} is set but EMPTY.\n"
+            "\n"
+            "That is what a Docker deploy looks like when the variable was never\n"
+            "filled in — compose passes it through as an empty string. Starting\n"
+            "anyway would leave every login returning 500 while the kiosk page\n"
+            "still loads, so this fails loudly instead.\n"
+            "\n"
+            f"Fix: set {SECRET_ENV} to a long random value, e.g.\n"
+            '  python3 -c "import secrets; print(secrets.token_hex(32))"\n'
+            "or remove the variable from the container environment.\n"
+        )
+
+    if value == DEV_SECRET:
+        sys.exit(
+            f"\nCLOCKIN refuses to start: {SECRET_ENV} is the built-in development\n"
+            "placeholder, which is public in this repository. Session cookies\n"
+            "signed with it can be forged by anyone who has read the source.\n"
+            f"Set {SECRET_ENV} to a long random value.\n"
+        )
+
+    if len(value) < MIN_SECRET_LENGTH:
+        sys.exit(
+            f"\nCLOCKIN refuses to start: {SECRET_ENV} is only {len(value)} characters.\n"
+            f"Session signing keys need at least {MIN_SECRET_LENGTH}. Generate one with\n"
+            '  python3 -c "import secrets; print(secrets.token_hex(32))"\n'
+        )
+
+    return value
+
+
 # Where the SQLite DB lives. Defaults to ./data for local dev.
 # Override with CLOCKIN_DATA_DIR=/data when running in Docker (the compose file
 # mounts a named volume at /data so the DB persists across rebuilds).
@@ -35,8 +99,9 @@ DB_PATH = DATA_DIR / "clockin.db"
 SCHEMA_PATH = BASE_DIR / "scripts" / "schema.sql"
 
 app = Flask(__name__)
-# Session secret — MUST be set to a long random string in production.
-app.secret_key = os.environ.get("CLOCKIN_SECRET", "dev-secret-change-me-in-production")
+# Session secret — resolved by _resolve_secret(), which refuses to start on a
+# blank or placeholder value rather than letting every login 500 silently.
+app.secret_key = _resolve_secret()
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=12)
 
 
