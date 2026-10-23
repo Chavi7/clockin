@@ -101,14 +101,29 @@ Portainer will clone the repo, build the Docker image (2-5 minutes the first tim
 
 ### Step 6 — Open the kiosk
 
-Once deployment finishes, open:
+One more environment variable first — the container binds to `127.0.0.1` by
+default, so only the server itself can reach it:
+
+- **name:** `CLOCKIN_BIND`
+- **value:** `0.0.0.0`
+
+That is what lets a classroom PC load the kiosk. (Leave it at the default and
+put a reverse proxy in front instead if you prefer — that's also the only way
+the browser camera works, because browsers only allow camera access over HTTPS
+or on `localhost`.)
+
+With `CLOCKIN_BIND=0.0.0.0`, open:
+
 ```
 http://your-server-ip:5000/
 ```
 
-You should see the **SCAN YOUR BADGE** kiosk page.
+You should see the **SCAN YOUR BADGE** kiosk screen.
 
 Then go to `http://your-server-ip:5000/login` — you'll be redirected to `/setup` because the database is fresh. Create your admin account and you're live.
+
+The full operating checklist — deploy, daily flow, backups, and what to do when
+it breaks mid-period — is in [docs/RUNBOOK.md](docs/RUNBOOK.md).
 
 ### Updating later
 
@@ -157,7 +172,11 @@ head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n'; echo
 
 ### Step 5 — Deploy
 
-Click **Deploy the stack**. Portainer downloads the image and starts the container — faster than the Repository method since nothing is built locally.
+Click **Deploy the stack**. Portainer pulls the image and starts the container — no build needed.
+
+Also add `CLOCKIN_BIND` = `0.0.0.0` under **Environment variables** (step 4's
+screen) if classroom PCs need to reach the kiosk — the default is `127.0.0.1`,
+which only allows the server itself.
 
 ### Updating later (web editor method)
 
@@ -409,6 +428,14 @@ If you want to start from scratch, click **BLANK TEMPLATE** instead — just the
 
 **Backward compatibility:** older CSVs that use separate `first_name` and `last_name` columns still upload correctly. If both `name` and `first_name`/`last_name` are present, `name` wins.
 
+**Re-uploading an updated roster is safe.** You do not have to start from a blank file each time. Each row is matched to an existing student before anything is inserted:
+
+1. by `employee_id`, if the column is filled in;
+2. otherwise by `student_id` — so correcting a misspelled name on a student whose school ID is known updates that student instead of creating a second one;
+3. otherwise by name + course.
+
+A row that matches more than one existing student is skipped and reported, rather than guessed at — add an `employee_id` column to say which one you mean. The import summary tells you how many rows were added, how many matched an existing student, and how many were skipped.
+
 ### Auto-generated Employee IDs
 
 Leave the `employee_id` column blank and the system fills it in based on the course:
@@ -595,7 +622,14 @@ To change the host port (e.g. run on 8080 instead of 5000), edit `.env`:
 CLOCKIN_PORT=8080
 ```
 
-Then `docker compose up -d` to apply.
+To let classroom PCs reach the container (rather than only the server itself),
+set the bind address:
+
+```
+CLOCKIN_BIND=0.0.0.0
+```
+
+Leave it unset for `127.0.0.1` (localhost only). Then `docker compose up -d` to apply.
 
 ---
 

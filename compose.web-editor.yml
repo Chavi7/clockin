@@ -24,10 +24,11 @@ services:
     restart: unless-stopped
     pull_policy: always
     ports:
-      # host:container — bound to localhost only; this app handles student PII
-      # and must never be reachable from the LAN directly. Put a reverse
-      # proxy in front if remote access is needed.
-      - "127.0.0.1:5000:5000"
+      # host:container. Localhost by default — set CLOCKIN_BIND=0.0.0.0 on the
+      # lab server so the classroom PCs can reach the kiosk, or keep localhost
+      # and put a reverse proxy in front (required for the browser-camera scan
+      # mode, which needs HTTPS off localhost). See docs/RUNBOOK.md.
+      - "${CLOCKIN_BIND:-127.0.0.1}:${CLOCKIN_PORT:-5000}:5000"
     environment:
       - CLOCKIN_SECRET=${CLOCKIN_SECRET}
       - CLOCKIN_API_KEY=${CLOCKIN_API_KEY}
