@@ -288,6 +288,21 @@ Output:
 
 From any classroom computer on the same network, open `http://your-server-ip:5000/`. The kiosk page is public — no login needed.
 
+### Run the tests
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest
+```
+
+The suite covers first-run setup, login and role enforcement, roster import and
+employee-ID generation, the kiosk scan path (clock in / clock out / duplicate and
+unknown badges), the badge PDF, and the CSV exports. It runs against a temporary
+database, so it never touches `data/clockin.db`.
+
+CI runs the same suite plus `pyflakes` on every pull request and every push to
+`main` (`.github/workflows/ci.yml`).
+
 ---
 
 ## How the multi-teacher model works
@@ -495,6 +510,10 @@ Later, when we add email infrastructure, this will become a self-service "forgot
 What's secure:
 - Passwords stored as bcrypt hashes (not plaintext, not reversible)
 - Session cookies signed with `CLOCKIN_SECRET` — can't be forged without the secret
+- **The app refuses to start** if `CLOCKIN_SECRET` is set but empty, is the
+  built-in development placeholder, or is shorter than 16 characters. Docker
+  turns an unset variable into an empty string, which used to leave the app
+  running with every login returning 500 — it now fails loudly at boot instead.
 - Role-based access enforced on every protected route (not just hidden in the UI)
 - Type-to-confirm safety check on permanent delete
 - One-admin-minimum guard prevents accidentally locking out all admins
