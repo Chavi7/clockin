@@ -40,3 +40,6 @@ logs/
 *.egg-info/
 build/
 dist/
+
+# Test tooling
+.pytest_cache/

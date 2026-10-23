@@ -1,0 +1,5 @@
+-r requirements.txt
+
+# Test + lint tooling. Not installed in the Docker image — see .dockerignore.
+pytest>=8.0
+pyflakes>=3.0
