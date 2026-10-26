@@ -79,18 +79,80 @@ def test_reuploading_the_same_employee_id_updates_in_place(admin_client, db):
     assert rows[0]["first_name"] == "Alexandra"
 
 
-def test_reuploading_without_employee_ids_duplicates_the_roster(admin_client, db):
-    """KNOWN HAZARD, encoded so a change in behaviour is visible.
+def test_reuploading_the_same_roster_does_not_duplicate_students(admin_client, db):
+    """Re-uploading a roster with no employee_id column updates instead of adding.
 
-    With no employee_id column, every upload mints fresh auto-generated IDs, so
-    the same CSV uploaded twice produces duplicate students. The README does not
-    warn about this. Left as-is here because changing import matching is a
-    behaviour change, not a test-and-CI change — flagged for a decision.
+    Matching is by student_id first, so the same CSV imported twice leaves the
+    roster at two students with their original employee IDs.
     """
     upload_roster(admin_client, GOOD_ROSTER)
+    original_ids = [r["employee_id"] for r in
+                    db.execute("SELECT employee_id FROM employees ORDER BY id")]
+
     upload_roster(admin_client, GOOD_ROSTER)
-    count = db.execute("SELECT COUNT(*) FROM employees").fetchone()[0]
-    assert count == 4
+
+    rows = db.execute("SELECT * FROM employees ORDER BY id").fetchall()
+    assert len(rows) == 2
+    assert [r["employee_id"] for r in rows] == original_ids
+
+
+def test_a_corrected_name_updates_the_existing_student(admin_client, db):
+    """A typo fix on a known student_id must not create a second student."""
+    upload_roster(admin_client,
+                  "name,student_id,school,course\n"
+                  "Alx Rivera,1001,CTEC,Cybersecurity 1\n")
+    upload_roster(admin_client,
+                  "name,student_id,school,course\n"
+                  "Alex Rivera,1001,CTEC,Cybersecurity 1\n")
+
+    rows = db.execute("SELECT * FROM employees").fetchall()
+    assert len(rows) == 1
+    assert rows[0]["first_name"] == "Alex"
+
+
+def test_without_a_student_id_the_match_falls_back_to_name_and_course(admin_client, db):
+    upload_roster(admin_client,
+                  "name,school,course\nAlex Rivera,CTEC,Cybersecurity 1\n")
+    upload_roster(admin_client,
+                  "name,school,course\nAlex Rivera,CTEC,Cybersecurity 1\n")
+
+    rows = db.execute("SELECT * FROM employees").fetchall()
+    assert len(rows) == 1
+
+
+def test_same_name_in_a_different_course_is_a_different_student(admin_client, db):
+    upload_roster(admin_client,
+                  "name,school,course\nAlex Rivera,CTEC,Cybersecurity 1\n")
+    upload_roster(admin_client,
+                  "name,school,course\nAlex Rivera,CTEC,IT Fundamentals\n")
+
+    rows = db.execute("SELECT * FROM employees").fetchall()
+    assert len(rows) == 2
+    assert {r["course"] for r in rows} == {"Cybersecurity 1", "IT Fundamentals"}
+
+
+def test_an_ambiguous_match_is_skipped_rather_than_guessed(admin_client, db):
+    """Two students with the same name in the same course: refuse to pick one."""
+    upload_roster(admin_client,
+                  "name,school,course,employee_id\n"
+                  "Alex Rivera,CTEC,Cybersecurity 1,CYB1-001\n"
+                  "Alex Rivera,CTEC,Cybersecurity 1,CYB1-002\n")
+    assert db.execute("SELECT COUNT(*) FROM employees").fetchone()[0] == 2
+
+    # No employee_id, no student_id -> two candidates -> skipped, not duplicated.
+    upload_roster(admin_client,
+                  "name,school,course\nAlex Rivera,CTEC,Cybersecurity 1\n")
+
+    assert db.execute("SELECT COUNT(*) FROM employees").fetchone()[0] == 2
+    page = admin_client.get("/roster")
+    assert b"matched more than one existing student" in page.data
+
+
+def test_the_import_summary_reports_matched_rows(admin_client):
+    upload_roster(admin_client, GOOD_ROSTER)
+    response = upload_roster(admin_client, GOOD_ROSTER)
+    page = admin_client.get(response.headers["Location"])
+    assert b"matched an existing student" in page.data
 
 
 def test_employee_ids_do_not_collide_across_uploads(admin_client, db):

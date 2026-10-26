@@ -1087,6 +1087,8 @@ def upload_roster():
 
     db = get_db()
     added, updated, conflicts = 0, 0, []
+    matched_existing = 0     # rows recognised as an existing student (student_id or name+course)
+    ambiguous_rows = []      # rows that matched more than one existing student
     generated_ids = []           # rows where we filled in the ID
     fallback_rows = []           # rows that used STU- fallback
     bad_period_rows = []         # rows whose period couldn't be normalized
@@ -1126,6 +1128,45 @@ def upload_roster():
             continue
 
         eid = norm.get("employee_id", "").upper().strip()
+
+        # No explicit ID in the CSV: try to recognise a student this teacher
+        # already has, so re-uploading the same roster updates rows instead of
+        # minting a new auto-generated ID and duplicating them.
+        #   1. by student_id (the school's own number — stable, survives renames)
+        #   2. failing that, by name + course
+        # Exactly one match -> reuse its ID (becomes an update below).
+        # More than one match -> refuse to guess; skip the row and say so.
+        if not eid:
+            sid = norm.get("student_id", "").strip()
+            matches, matched_by = [], "name and course"
+            if sid:
+                matches = db.execute(
+                    """SELECT employee_id FROM employees
+                       WHERE owner_teacher_id = ?
+                         AND ifnull(student_id, '') = ?""",
+                    (user["id"], sid),
+                ).fetchall()
+                matched_by = "student ID"
+            if not matches:
+                matches = db.execute(
+                    """SELECT employee_id FROM employees
+                       WHERE owner_teacher_id = ?
+                         AND lower(first_name) = lower(?)
+                         AND lower(last_name)  = lower(?)
+                         AND lower(ifnull(course, '')) = lower(?)""",
+                    (user["id"], norm["first_name"], norm["last_name"],
+                     norm.get("course", "")),
+                ).fetchall()
+                matched_by = "name and course"
+            if len(matches) == 1:
+                eid = matches[0]["employee_id"]
+                matched_existing += 1
+            elif len(matches) > 1:
+                ambiguous_rows.append(
+                    f"{norm['first_name']} {norm['last_name']} "
+                    f"({matched_by}, line {line_num})"
+                )
+                continue
 
         # Auto-generate ID if blank
         if not eid:
@@ -1206,9 +1247,22 @@ def upload_roster():
     db.commit()
 
     msg = f"Roster updated. Added {added}, updated {updated}."
+    if matched_existing:
+        msg += f" {matched_existing} matched an existing student and were updated."
     if generated_ids:
         msg += f" Generated {len(generated_ids)} new Employee IDs."
     flash(msg, "success" if not conflicts else "warning")
+
+    if ambiguous_rows:
+        flash(
+            f"⚠ {len(ambiguous_rows)} row(s) matched more than one existing student "
+            f"and were skipped — add an 'employee_id' column to say which one you mean.",
+            "warning",
+        )
+        for row_desc in ambiguous_rows[:5]:
+            flash(f"⚠ {row_desc}", "warning")
+        if len(ambiguous_rows) > 5:
+            flash(f"…and {len(ambiguous_rows) - 5} more.", "warning")
 
     if generated_ids and len(generated_ids) <= 10:
         flash("Generated IDs: " + ", ".join(generated_ids), "info")
