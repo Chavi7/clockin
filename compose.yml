@@ -22,6 +22,11 @@ services:
       # See docs/RUNBOOK.md.
       - "${CLOCKIN_BIND:-127.0.0.1}:${CLOCKIN_PORT:-5000}:5000"
     environment:
+      # Container clock. Without this the container runs in UTC, so a scan at
+      # 12:42 EDT is stored as 16:42 and the "today" on the dashboard rolls over
+      # at 8pm local. Durations are unaffected, but every timestamp a teacher
+      # reads or exports would be wrong.
+      - TZ=${TZ:-America/New_York}
       # CLOCKIN_SECRET is pulled from .env — never commit the real value.
       - CLOCKIN_SECRET=${CLOCKIN_SECRET}
       # Shared secret for the Inventory Manager roster sync API.

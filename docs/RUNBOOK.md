@@ -11,6 +11,12 @@ attendance to CSV. The database is one SQLite file inside the container.
 
 ## First deploy
 
+**Step 0 — create the shared network, once, before either app.** Both stacks
+expect an external Docker network called `ctec-net`, so a stack deployed
+without it fails with "network ctec-net declared as external, but could not be
+found". In Portainer: **Networks → Add network**, name `ctec-net`, driver
+`bridge`. From a shell: `docker network create ctec-net`.
+
 1. In Portainer: **Stacks → Add stack**, build method **Repository**,
    `https://github.com/Chavi7/clockin`, ref `refs/heads/main`, compose
    `compose.yml`.
@@ -20,12 +26,24 @@ attendance to CSV. The database is one SQLite file inside the container.
    |---|---|
    | `CLOCKIN_SECRET` | a long random string — `python3 -c "import secrets; print(secrets.token_hex(32))"` |
    | `CLOCKIN_BIND` | `0.0.0.0` so classroom PCs can reach the kiosk |
+   | `TZ` | your timezone, e.g. `America/New_York` — otherwise the container runs in UTC and every recorded time is hours off |
 
    The app **refuses to start** if `CLOCKIN_SECRET` is empty or left as the
    placeholder. That is deliberate — a blank secret used to leave a container
    that looked healthy but returned 500 on every login.
 3. Deploy, then open `/login` — with a fresh database you land on `/setup` and
    create the first admin account there.
+
+## Check the deployment actually works
+
+```bash
+./scripts/smoke.sh http://<lab-server-ip>:5000
+```
+
+Read-only, takes a second, exits 0 if healthy. It checks the kiosk renders, the
+login and setup pages don't 500, auth is enforced, and the scan API rejects junk
+— which is exactly the set of things a blank secret used to break silently. Run
+it right after deploying, and again if a period starts weird.
 
 ## The URL students use
 
